@@ -1,0 +1,199 @@
+/* dashboardstyle.css - 國立中央大學 K書中心主選單頁面樣式 */
+
+body {
+    /* 移除多餘的 padding，讓內容更置中 */
+    padding: 0;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #e0f2f7, #c1e4ed); /* 柔和的淺藍色漸變背景 */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+}
+
+.dashboard-container { /* 新增一個包裹器來管理整體佈局和陰影 */
+    background-color: white;
+    padding: 40px 50px;
+    border-radius: 15px; /* 更圓潤的邊角 */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); /* 柔和的陰影 */
+    text-align: center;
+    max-width: 800px;
+    width: 90%;
+    transform: translateY(0);
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+.dashboard-container:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+.dashboard-container h2 {
+    font-size: 2.2em; /* 標題字體更大 */
+    color: #007bff; /* 主藍色 */
+    margin-bottom: 25px;
+    font-weight: 700;
+}
+
+.dashboard-container p {
+    font-size: 1.1em;
+    color: #555;
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+.choice-container {
+    /* 移除不必要的 border 和 height */
+    border: none;
+    height: auto;
+    display: flex; /* 使用 flexbox 讓按鈕自動排版 */
+    flex-wrap: wrap; /* 允許按鈕換行 */
+    justify-content: center; /* 水平居中 */
+    gap: 20px; /* 按鈕間距 */
+    margin-top: 30px;
+}
+
+.choice-container button {
+    /* 優化按鈕樣式 */
+    width: 200px; /* 統一按鈕寬度 */
+    padding: 15px 25px;
+    margin: 0; /* 移除舊的 margin，使用 gap */
+    border: none;
+    border-radius: 30px; /* 更圓潤的按鈕 */
+    background: linear-gradient(140deg, #5b9eff, #3a84f9); /* 藍色漸變 */
+    color: white;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 10px -3px rgba(42, 116, 233, 0.45);
+    transition: all 0.3s ease;
+    display: flex; /* 讓內容居中 */
+    align-items: center;
+    justify-content: center;
+    text-decoration: none; /* 如果是連結，移除下劃線 */
+}
+
+.choice-container button:hover {
+    background: linear-gradient(140deg, #4a8ff7, #2a74e9);
+    transform: translateY(-3px);
+    box-shadow: 0 7px 16px -4px rgba(42, 116, 233, 0.5);
+}
+
+.choice-container button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 5px -2px rgba(42, 116, 233, 0.3);
+}
+
+/* 確保側邊選單的樣式也能良好呈現 */
+/* 將 choc-menu-toggle-btn-container 和 #side-menu 相關樣式從 remindsstyle.css 複製過來 */
+.choc-menu-toggle-btn-container {
+    position: fixed;
+    right: 25px;
+    top: 25px;
+    z-index: 1050;
+}
+
+#menu-toggle-btn {
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    color: #0d6efd;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+#menu-toggle-btn:hover {
+    background-color: #e9ecef;
+}
+
+#side-menu {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 270px;
+    height: 100%;
+    background-color: #ffffff;
+    padding: 20px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    z-index: 1000;
+    overflow-y: auto;
+    transform: translateX(-270px);
+    transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
+    display: flex;
+    flex-direction: column;
+}
+#side-menu.open {
+    transform: translateX(0);
+}
+
+#side-menu .menu-header {
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+#side-menu .menu-header h5 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #212529;
+}
+
+#side-menu #close-menu-btn {
+    font-size: 1.6rem;
+    color: #6c757d;
+    background: none;
+    border: none;
+    padding: 0 .5rem;
+    opacity: 0.8;
+    line-height: 1;
+}
+#side-menu #close-menu-btn:hover {
+    color: #000;
+    opacity: 1;
+}
+
+#side-menu .menu-button {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 12px 15px;
+    text-align: left;
+    font-size: 1rem;
+    border-radius: 0.375rem;
+    color: #495057;
+    background-color: transparent;
+    border: none;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+#side-menu .menu-button i {
+    margin-right: 12px;
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+}
+#side-menu .menu-button:hover {
+    background-color: #e9ecef;
+    color: #0d6efd;
+}
+
+#logout-form-container {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid #dee2e6;
+}
+#side-menu .logout-button {
+    color: #dc3545;
+}
+#side-menu .logout-button:hover {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #b02a37;
+}
+
+body.menu-open {
+    padding-left: calc(1.5rem + 270px); /* 假設您在 HTML body 上應用了這個類 */
+    overflow-x: hidden;
+}

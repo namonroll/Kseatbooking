@@ -1,0 +1,252 @@
+/* auth_forms_option1.css - 登入、註冊、忘記密碼頁面的樣式 (溫和漸變藍) */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    /* 統一字體，確保與dashboard頁面風格一致 */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    height: 100vh;
+    /* 柔和的藍色漸變背景，更專業和舒緩 */
+    background: linear-gradient(135deg, #a7b7e6, #7d9ae0);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden; /* 防止背景動畫造成滾動條，確保靜態 */
+    background-image: url('S__25649170.jpg' );
+    background-size: cover; 
+    background-position: right; 
+    background-repeat: no-repeat; /* 確保背景圖片不重複 */
+    /* 使用 ::before 來覆蓋背景圖片透明度 */
+    position: relative;
+}
+
+
+/* 登入、註冊、忘記密碼方塊的通用樣式 */
+.login-box,
+
+.forget-box {
+    background-color: white;
+    padding: 30px 40px;
+    border-radius: 12px; /* 稍大圓角 */
+    box-shadow: 0px 10px 30px rgba(0,0,0,0.1);
+    text-align: center;
+    width: 320px; /* 統一寬度 */
+    position: relative; /* 為 back-to-login 連結提供定位上下文 */
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out; /* 新增過渡效果 */
+}
+.register-box{
+    background-color: white;
+    padding: 10px 20px;
+    border-radius: 12px; /* 稍大圓角 */
+    box-shadow: 0px 10px 30px rgba(0,0,0,0.1);
+    text-align: center;
+    width: 320px; /* 統一寬度 */
+    position: relative; /* 為 back-to-login 連結提供定位上下文 */
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out; /* 新增過渡效果 */
+}
+
+
+/* 懸停效果 */
+.login-box:hover,
+.register-box:hover,
+.forget-box:hover {
+    transform: translateY(-5px); /* 向上輕微抬升 */
+    box-shadow: 0px 15px 40px rgba(0,0,0,0.15); /* 陰影更明顯 */
+}
+
+h2 {
+    margin-bottom: 25px; /* 調整標題下邊距 */
+    font-size: 28px; /* 標題字體更大 */
+    font-weight: bold;
+    color: #3f51b5; /* 使用較深的藍色作為標題色 */
+}
+
+/* 輸入框的通用樣式 */
+input {
+    width: 100%;
+    padding: 14px 0; /* 調整內邊距 */
+    margin: 12px 0; /* 調整外邊距 */
+    border: none;
+    border-bottom: 2px solid #ccc;
+    outline: none;
+    font-size: 17px; /* 字體稍大 */
+    color: #495057; /* 輸入文字顏色 */
+    background: transparent;
+    transition: border-color 0.3s ease; /* 邊框顏色過渡 */
+}
+
+input:focus {
+    border-color: #3f51b5; /* 聚焦時更深的藍色 */
+}
+
+/* 按鈕的通用樣式 */
+.login-box button,
+.register-btn,
+.forget-btn,
+.cre-btn { /* cre-btn 應與其他提交按鈕樣式一致 */
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 30px;
+    /* 藍色漸變按鈕，與dashboard風格相似 */
+    background: linear-gradient(140deg, #5b9eff, #3a84f9);
+    color: white;
+    font-size: 18px; /* 字體稍大 */
+    font-weight: 600; /* 字重 */
+    cursor: pointer;
+    box-shadow: 0 4px 10px -3px rgba(42, 116, 233, 0.45); /* 陰影 */
+    transition: all 0.3s ease; /* 平滑過渡 */
+    margin-top: 20px; /* 按鈕上邊距 */
+}
+
+.login-box button:hover,
+.register-btn:hover,
+.forget-btn:hover,
+.cre-btn:hover {
+    background: linear-gradient(140deg, #4a8ff7, #2a74e9); /* 懸停時顏色稍深 */
+    transform: translateY(-2px); /* 輕微上移 */
+    box-shadow: 0 7px 16px -4px rgba(42, 116, 233, 0.5); /* 陰影更明顯 */
+}
+
+.login-box button:active,
+.register-btn:active,
+.forget-btn:active,
+.cre-btn:active {
+    transform: translateY(0); /* 點擊時回到原位 */
+    box-shadow: 0 2px 5px -2px rgba(42, 116, 233, 0.3);
+}
+
+/* 忘記密碼連結 */
+.login-box .forgot {
+    display: block;
+    text-align: right;
+    font-size: 15px;
+    margin-top: 10px; /* 調整位置 */
+    color: #6a737d; /* 更柔和的灰色 */
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.login-box .forgot:hover {
+    color: #3f51b5; /* 懸停時變成主色調 */
+}
+
+/* Toast 訊息 (保持原有基礎，但調整位置和陰影) */
+.toast-container {
+  position: fixed;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.toast {
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    color: #fff;
+    font-size: 14px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 0.5s;
+}
+
+.toast-success {
+    background-color: #28a745;
+}
+
+.toast-error {
+    background-color: #dc3545;
+}
+
+.toast-info {
+    background-color: #17a2b8;
+}
+
+.fade-out {
+    opacity: 0;
+    transition: opacity 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+/* 錯誤列表 */
+ul.errorlist {
+    color: #dc3545; /* 統一使用錯誤紅色 */
+    margin-top: 10px;
+    font-size: 14px;
+    padding-left: 0;
+    list-style: none;
+    text-align: left; /* 錯誤列表靠左 */
+}
+
+.form-error {
+    color: #dc3545;
+    font-size: 14px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+/* 返回登入連結 */
+.back-to-login {
+    position: absolute;
+    top: 15px; /* 調整位置 */
+    left: 15px; /* 調整位置 */
+    font-size: 15px; /* 字體大小 */
+    color: #6a737d; /* 柔和的灰色 */
+    text-decoration: none;
+    background: rgba(255,255,255,0.7); /* 輕微透明背景 */
+    padding: 6px 12px; /* 調整內邊距 */
+    border-radius: 8px; /* 圓角 */
+    transition: background-color 0.2s, color 0.2s, transform 0.2s; /* 新增過渡效果 */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* 小陰影 */
+}
+
+.back-to-login:hover {
+    background: #e9e9e9; /* 懸停時背景變淺灰 */
+    color: #3f51b5; /* 懸停時文字變藍 */
+    transform: translateY(-2px); /* 輕微上移 */
+}
+
+/* 表單組 (用於 label 和 input 的包裹) */
+.form-group {
+    margin-bottom: 0px; /* 增加組間距 */
+    text-align: left; /* 確保標籤和輸入框靠左 */
+}
+
+/* 如果您的 HTML 結構有 label，可以新增樣式 */
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #555;
+    font-weight: 500;
+    font-size: 16px;
+}
+
+.login-box-logo img{
+    width: 100px; /* 調整 logo 寬度 */
+    height: 20px; /* 自動調整高度 */
+    margin-bottom: 15px; /* logo 與表單間距 */
+    display: block; /* 確保 logo 在新行 */
+    margin-left: auto; /* 居中 logo */
+    margin-right: auto; /* 居中 logo */
+}
+
+    .text-container{
+      position: fixed;
+      top: 2px;
+      text-align: center;
+      width: 40%;
+      padding: 10px;
+      background-color: rgba(255, 255, 255, 0.5);
+      z-index: 10000;
+    }
+    

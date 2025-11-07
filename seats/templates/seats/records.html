@@ -1,0 +1,643 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>{% block title %}{{ page_title|default:"個人紀錄" }}{% endblock title %}</title>
+    {# Favicon #}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" href="{% static 'S__25559043.png' %}" type="image/png" />
+    <link rel="shortcut icon" href="{% static 'S__25559043.png' %}" type="image/png" />
+    <link rel="stylesheet" type="text/css" href="{% static 'seats/recordsstyle.css' %}">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+    <style>
+        /* --- 基礎 Body 和佈局樣式 --- */
+        body {
+            padding: 20px 50px; /* Original padding */
+            font-family: Arial, sans-serif;
+            background-color: rgb(235, 245, 251);
+            transition: padding-left 0.3s ease-in-out; /* For menu push effect */
+        }
+
+        body.menu-open {
+            padding-left: calc(50px + 270px); /* Original left padding + menu width */
+            overflow-x: hidden;
+        }
+
+        .content-wrapper {
+            max-width: 960px;
+            margin: auto;
+        }
+
+        /* --- Hamburger Menu Toggle Button Style --- */
+        .choc-menu-toggle-btn-container {
+            position: fixed;
+            right: 25px;
+            top: 25px;
+            z-index: 1050;
+        }
+
+        #menu-toggle-btn {
+            background-color: #fff;
+            border: 1px solid #ced4da;
+            color: #0d6efd;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        #menu-toggle-btn:hover {
+            background-color: #e9ecef;
+        }
+
+        /* --- New Side Menu CSS --- */
+        #side-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 270px;
+            height: 100%;
+            background-color: #ffffff;
+            padding: 20px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            z-index: 1000;
+            overflow-y: auto;
+            transform: translateX(-270px);
+            transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
+            display: flex;
+            flex-direction: column;
+        }
+        #side-menu.open {
+            transform: translateX(0);
+        }
+
+        #side-menu .menu-header {
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #side-menu .menu-header h5 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #212529;
+        }
+
+        #side-menu #close-menu-btn {
+            font-size: 1.6rem;
+            color: #6c757d;
+            background: none;
+            border: none;
+            padding: 0 .5rem;
+            opacity: 0.8;
+            line-height: 1;
+        }
+        #side-menu #close-menu-btn:hover {
+            color: #000;
+            opacity: 1;
+        }
+
+        #side-menu .menu-button {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 12px 15px;
+            text-align: left;
+            font-size: 1rem;
+            border-radius: 0.375rem;
+            color: #495057;
+            background-color: transparent;
+            border: none;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        #side-menu .menu-button i {
+            margin-right: 12px;
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+        }
+        #side-menu .menu-button:hover {
+            background-color: #e9ecef;
+            color: #0d6efd;
+        }
+
+        #logout-form-container {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+        #side-menu .logout-button {
+            color: #dc3545;
+        }
+        #side-menu .logout-button:hover {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: #b02a37;
+        }
+
+        /* Original records page styles */
+        .back-button-container {
+            margin-bottom: 20px;
+        }
+        .records-section {
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: .375rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
+        }
+        .records-section h4 {
+            margin-bottom: 1rem;
+            color: #0d6efd;
+        }
+        .records-section ul { /* Keep for potential other uses, or remove if truly unused */
+             list-style: none;
+             padding: 0;
+           }
+           .records-section li { /* Keep for potential other uses, or remove if truly unused */
+             border-bottom: 1px solid #eee;
+             padding: 10px 0;
+           }
+           .records-section li:last-child { /* Keep for potential other uses, or remove if truly unused */
+             border-bottom: none;
+           }
+        .table th, .table td {
+            vertical-align: middle;
+        }
+        .action-buttons form {
+            margin-bottom: 0;
+        }
+
+        /* Toast 訊息樣式 */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1100;
+        }
+        .custom-toast {
+            padding: .75rem 1.25rem;
+            margin-bottom: 1rem;
+            border: 1px solid transparent;
+            border-radius: .25rem;
+            color: #fff;
+            opacity: 0.95;
+            box-shadow: 0 .25rem .75rem rgba(0,0,0,.1);
+        }
+        .custom-toast.toast-success { background-color: #198754; }
+        .custom-toast.toast-danger   { background-color: #dc3545; }
+        .custom-toast.toast-warning { background-color: #ffc107; color: #000; }
+        .custom-toast.toast-info    { background-color: #0dcaf0; color: #000; }
+        .fade-out { opacity: 0; transition: opacity 0.5s ease-out; }
+
+        /* Pagination styles */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            padding-left: 0;
+            list-style: none;
+            border-radius: .25rem;
+            margin-top: 20px;
+        }
+        .page-item {
+            margin: 0 5px;
+        }
+        .page-link {
+            position: relative;
+            display: block;
+            color: #0d6efd;
+            text-decoration: none;
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            padding: .375rem .75rem;
+            border-radius: .25rem;
+            transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+        }
+        .page-link:hover {
+            z-index: 2;
+            color: #0a58ca;
+            background-color: #e9ecef;
+            border-color: #dee2e6;
+        }
+        .page-item.active .page-link {
+            z-index: 3;
+            color: #fff;
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+        .page-item.disabled .page-link {
+            color: #6c757d;
+            pointer-events: none;
+            background-color: #fff;
+            border-color: #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    {# Toast 容器 #}
+    <div class="toast-container" id="toast-container-custom"></div>
+
+    <div class="choc-menu-toggle-btn-container">
+        <button id="menu-toggle-btn" type="button" class="btn btn-light btn-lg" aria-label="Toggle navigation menu">
+            <i class="bi bi-list"></i>
+        </button>
+    </div>
+
+    <div id="side-menu">
+        <div class="menu-header">
+            <h5>預約功能</h5>
+            <button id="close-menu-btn" type="button" aria-label="關閉選單">×</button>
+        </div>
+
+        <button type="button" class="menu-button" onclick="window.location.href='{% url 'seats:dashboard' %}'">
+            <i class="bi bi-house-door-fill"></i> 主選單
+        </button>
+        <button type="button" class="menu-button" onclick="window.location.href='{% url 'seats:welcome' %}'">
+            <i class="bi bi-grid-1x2-fill"></i> 即時座位圖
+        </button>
+        <button type="button" class="menu-button" onclick="window.location.href='{% url 'seats:res_time' %}'">
+            <i class="bi bi-calendar-plus-fill"></i> 預約座位
+        </button>
+        <button type="button" class="menu-button" onclick="window.location.href='{% url 'seats:reminds' %}'">
+            <i class="bi bi-exclamation-octagon-fill"></i> 檢舉系統
+        </button>
+        <button type="button" class="menu-button" onclick="window.location.href='{% url 'seats:records' %}'">
+            <i class="bi bi-person-lines-fill"></i> 個人紀錄
+        </button>
+
+        <div id="logout-form-container">
+            <form id="logout-form-menu" method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="menu-button logout-button">
+                    <i class="bi bi-box-arrow-right"></i> 登出
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="content-wrapper">
+        {% comment %} <h3>{{ page_title|default:"個人紀錄" }}</h3> {% endcomment %}
+
+        {# Reservations Section #}
+        <div class="records-section">
+            <h4>我的預約記錄</h4>
+            {% if reservations %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mt-2 caption-top">
+                        <caption>您的所有預約</caption>
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">座位</th>
+                                <th scope="col">日期</th>
+                                <th scope="col">開始</th>
+                                <th scope="col">結束</th>
+                                <th scope="col">狀態</th>
+                                <th scope="col">建立時間</th>
+                                <th scope="col">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {# Iterate directly over the Page object #}
+                            {% for res in reservations %}
+                            <tr>
+                                <th scope="row">{{ forloop.counter0|add:reservations.start_index }}</th>
+                                <td>{{ res.seat.name }}</td>
+                                <td>{{ res.start_time|date:"Y-m-d" }}</td>
+                                <td>{{ res.start_time|time:"H:i" }}</td>
+                                <td>{{ res.end_time|time:"H:i" }}</td>
+                                <td>
+                                    {% if res.status == 'cancelled' %}
+                                        <span class="badge bg-danger">{{ res.get_status_display }}</span>
+                                    {% elif res.status == 'reserved' %}
+                                        <span class="badge bg-success">{{ res.get_status_display }}</span>
+                                    {% elif res.status == 'completed' %}
+                                        <span class="badge bg-secondary">{{ res.get_status_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-info">{{ res.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ res.created_at|date:"y-m-d H:i" }}</td>
+                                <td class="action-buttons">
+                                    {% if res.status == 'reserved' %}
+                                        {% if res.start_time > timezone_now %}
+                                            <form method="POST" action="{% url 'seats:cancel_reservation' reservation_id=res.id %}" style="display: inline;">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('確定要取消此預約嗎？');">取消</button>
+                                            </form>
+                                        {% else %}
+                                            <span class="text-muted fst-italic">-</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted fst-italic">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {# Pagination controls for Reservations #}
+                <nav aria-label="Page navigation for reservations">
+                    <ul class="pagination">
+                        {# Previous button #}
+                        {% if reservations.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?res_page={{ reservations.previous_page_number }}" aria-label="Previous">
+                                    <span aria-hidden="true">«</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link" aria-hidden="true">«</span>
+                            </li>
+                        {% endif %}
+
+                        {# Page numbers #}
+                        {% for i in reservations.paginator.page_range %}
+                            {% if reservations.number == i %}
+                                <li class="page-item active" aria-current="page">
+                                    <span class="page-link">{{ i }}</span>
+                                </li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?res_page={{ i }}">{{ i }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {# Next button #}
+                        {% if reservations.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?res_page={{ reservations.next_page_number }}" aria-label="Next">
+                                    <span aria-hidden="true">»</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link" aria-hidden="true">»</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% else %}
+                <p class="mt-3">您目前沒有任何預約紀錄。</p>
+            {% endif %}
+        </div>
+
+        {# My Submitted Reports Section #}
+        <div class="records-section">
+            <h4>我的檢舉記錄 (我提交的)</h4>
+            {% if submitted_reports %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mt-2 caption-top">
+                        <caption>您提交的所有檢舉</caption>
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">被檢舉座位</th>
+                                <th scope="col">事件日期</th>
+                                <th scope="col">事件時間</th>
+                                <th scope="col" style="min-width: 150px;">原因</th>
+                                <th scope="col">提交時間</th>
+                                <th scope="col">狀態</th>
+                                <th scope="col" style="min-width: 150px;">管理員備註</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in submitted_reports %}
+                            <tr>
+                                <th scope="row">{{ forloop.counter0|add:submitted_reports.start_index }}</th>
+                                <td>{% if report.seat %}{{ report.seat.name }}{% else %}未知{% endif %}</td>
+                                <td>{% if report.reported_date %}{{ report.reported_date|date:"Y-m-d" }}{% else %}未知日期{% endif %}</td>
+                                <td>{% if report.reported_time %}{{ report.reported_time|date:"H:i" }}{% else %}未知時間{% endif %}</td>
+                                <td>{{ report.reason|truncatechars:50 }}</td>
+                                <td>{{ report.submitted_at|date:"y-m-d H:i" }}</td>
+                                <td>
+                                    <span class="badge {% if report.status == 'pending' %}bg-warning text-dark{% elif report.status == 'resolved' or report.status == 'confirmed' %}bg-success{% elif report.status == 'dismissed' %}bg-danger{% else %}bg-secondary{% endif %}">{{ report.get_status_display }}</span>
+                                </td>
+                                <td>{% if report.admin_notes %}{{ report.admin_notes|truncatechars:50 }}{% else %}-{% endif %}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {# Pagination controls for Submitted Reports #}
+                <nav aria-label="Page navigation for submitted reports">
+                    <ul class="pagination">
+                        {% if submitted_reports.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?sub_page={{ submitted_reports.previous_page_number }}" aria-label="Previous">
+                                    <span aria-hidden="true">«</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link" aria-hidden="true">«</span>
+                            </li>
+                        {% endif %}
+
+                        {% for i in submitted_reports.paginator.page_range %}
+                            {% if submitted_reports.number == i %}
+                                <li class="page-item active" aria-current="page">
+                                    <span class="page-link">{{ i }}</span>
+                                </li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?sub_page={{ i }}">{{ i }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if submitted_reports.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?sub_page={{ submitted_reports.next_page_number }}" aria-label="Next">
+                                    <span aria-hidden="true">»</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link" aria-hidden="true">»</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% else %}
+                <p class="mt-3">沒有提交的檢舉記錄。</p>
+            {% endif %}
+        </div>
+
+        {# Reports About User Section #}
+        <div class="records-section">
+            <h4>被檢舉的記錄</h4>
+            {% if reports_about_user %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mt-2 caption-top">
+                        <caption>與您的預約相關的檢舉</caption>
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">#</th>
+                                <th scope="col">被檢舉座位</th>
+                                <th scope="col">事件日期</th>
+                                <th scope="col">事件時間</th>
+                                <th scope="col" style="min-width: 150px;">原因</th>
+                                <th scope="col">檢舉提交時間</th>
+                                <th scope="col">狀態</th>
+                                <th scope="col" style="min-width: 150px;">管理員備註</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for report in reports_about_user %}
+                            <tr>
+                                <th scope="row">{{ forloop.counter0|add:reports_about_user.start_index }}</th>
+                                <td>{% if report.seat %}{{ report.seat.name }}{% else %}未知{% endif %}</td>
+                                <td>{% if report.reported_date %}{{ report.reported_date|date:"Y-m-d" }}{% else %}未知日期{% endif %}</td>
+                                <td>{% if report.reported_time %}{{ report.reported_time|date:"H:i" }}{% else %}未知時間{% endif %}</td>
+                                <td>{{ report.reason|truncatechars:50 }}</td>
+                                <td>{{ report.submitted_at|date:"y-m-d H:i" }}</td>
+                                <td>
+                                    <span class="badge {% if report.status == 'pending' %}bg-warning text-dark{% elif report.status == 'resolved' or report.status == 'confirmed' %}bg-success{% elif report.status == 'dismissed' %}bg-danger{% else %}bg-secondary{% endif %}">{{ report.get_status_display }}</span>
+                                </td>
+                                <td>{% if report.admin_notes %}{{ report.admin_notes|truncatechars:50 }}{% else %}-{% endif %}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {# Pagination controls for Reports About User #}
+                <nav aria-label="Page navigation for reports about user">
+                    <ul class="pagination">
+                        {% if reports_about_user.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?rep_page={{ reports_about_user.previous_page_number }}" aria-label="Previous">
+                                    <span aria-hidden="true">«</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link" aria-hidden="true">«</span>
+                            </li>
+                        {% endif %}
+
+                        {% for i in reports_about_user.paginator.page_range %}
+                            {% if reports_about_user.number == i %}
+                                <li class="page-item active" aria-current="page">
+                                    <span class="page-link">{{ i }}</span>
+                                </li>
+                            {% else %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?rep_page={{ i }}">{{ i }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if reports_about_user.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?rep_page={{ reports_about_user.next_page_number }}" aria-label="Next">
+                                    <span aria-hidden="true">»</span>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link" aria-hidden="true">»</span>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            {% else %}
+                <p class="mt-3">沒有與您的預約相關的檢舉記錄。</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {# Toast Display Script #}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const toastContainer = document.getElementById('toast-container-custom');
+            {% if messages %}
+                {% for message in messages %}
+                    const toast = document.createElement('div');
+                    let toastClass = 'toast-info';
+                    if ("{{ message.tags }}".includes("success")) toastClass = 'toast-success';
+                    else if ("{{ message.tags }}".includes("error") || "{{ message.tags }}".includes("danger")) toastClass = 'toast-danger';
+                    else if ("{{ message.tags }}".includes("warning")) toastClass = 'toast-warning';
+
+                    toast.className = 'custom-toast ' + toastClass;
+                    toast.textContent = "{{ message|escapejs }}";
+                    toastContainer.appendChild(toast);
+
+                    setTimeout(function() {
+                        toast.classList.add('fade-out');
+                        setTimeout(function() { toast.remove(); }, 500);
+                    }, 5000);
+                {% endfor %}
+            {% endif %}
+        });
+    </script>
+
+    {# New Side Menu Script (starts closed) #}
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const menuToggleButton = document.getElementById('menu-toggle-btn');
+        const sideMenu = document.getElementById('side-menu');
+        const closeMenuButton = document.getElementById('close-menu-btn');
+        const bodyElement = document.body;
+
+        function openMenu() {
+            if(sideMenu && bodyElement){
+                sideMenu.classList.add('open');
+                bodyElement.classList.add('menu-open');
+                try { document.cookie = "menu_open_cookie=true; path=/; SameSite=Lax"; } catch(e) { console.warn("Could not set cookie for open state", e); }
+            }
+        }
+
+        function closeMenu() {
+            if(sideMenu && bodyElement){
+                sideMenu.classList.remove('open');
+                bodyElement.classList.remove('menu-open');
+                try { document.cookie = "menu_open_cookie=false; path=/; SameSite=Lax"; } catch(e) { console.warn("Could not set cookie for close state", e); }
+            }
+        }
+
+        if (menuToggleButton && sideMenu && closeMenuButton && bodyElement) {
+            menuToggleButton.addEventListener('click', (event) => {
+                if (sideMenu.classList.contains('open')) {
+                    closeMenu();
+                } else {
+                    openMenu();
+                }
+                event.stopPropagation();
+            });
+
+            closeMenuButton.addEventListener('click', (event) => {
+                closeMenu();
+                event.stopPropagation();
+            });
+
+            document.addEventListener('click', (event) => {
+                const isClickInsideMenu = sideMenu.contains(event.target);
+                const menuToggleContainer = document.querySelector('.choc-menu-toggle-btn-container');
+                const isClickToggleBtnOrContainer = menuToggleContainer && menuToggleContainer.contains(event.target);
+
+                if (!isClickInsideMenu && !isClickToggleBtnOrContainer && sideMenu.classList.contains('open')) {
+                    closeMenu();
+                }
+            });
+        } else {
+            if (!menuToggleButton) console.error("Menu toggle button (#menu-toggle-btn) not found!");
+            if (!sideMenu) console.error("Side menu element (#side-menu) not found!");
+            if (!closeMenuButton) console.error("Close menu button (#close-menu-btn) not found!");
+            if (!bodyElement) console.error("Body element not found!");
+        }
+    });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,523 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>預約座位</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'seats/res_timestyle.css' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <style>
+        /* --- 基礎 Body 和佈局樣式 (影響選單打開時主內容的推移) --- */
+        body {
+            transition: padding-left 0.3s ease-in-out;
+            padding-top: 1.5rem;
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+            background-color: #EBF5FB; /* MODIFIED: Changed from #f8f9fa to R:235, G:245, B:251 */
+            color: #212529;
+        }
+
+        body.menu-open {
+            padding-left: calc(1.5rem + 270px);
+            overflow-x: hidden;
+        }
+
+        /* --- Hamburger Menu Toggle Button (Unchanged) --- */
+        .choc-menu-toggle-btn-container {
+            position: fixed;
+            right: 25px;
+            top: 25px;
+            z-index: 1050;
+        }
+        #menu-toggle-btn {
+            background-color: #fff;
+            border: 1px solid #ced4da;
+            color: #0d6efd;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        #menu-toggle-btn:hover {
+            background-color: #e9ecef;
+        }
+
+        /* --- 側邊選單 (Unchanged) --- */
+        #side-menu {
+            position: fixed; top: 0; left: 0; width: 270px; height: 100%;
+            background-color: #ffffff; padding: 20px; box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            z-index: 1000; overflow-y: auto; transform: translateX(-270px);
+            transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
+            display: flex; flex-direction: column;
+        }
+        #side-menu.open { transform: translateX(0); }
+        #side-menu .menu-header {
+            padding-bottom: 15px; margin-bottom: 20px; border-bottom: 1px solid #dee2e6;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        #side-menu .menu-header h5 { margin: 0; font-size: 1.2rem; font-weight: 600; color: #212529; }
+        #side-menu #close-menu-btn {
+            font-size: 1.6rem; color: #6c757d; background: none; border: none;
+            padding: 0 .5rem; opacity: 0.8; line-height: 1;
+        }
+        #side-menu #close-menu-btn:hover { color: #000; opacity: 1; }
+        #side-menu .menu-button {
+            display: flex; align-items: center; width: 100%; margin-bottom: 10px;
+            padding: 12px 15px; text-align: left; font-size: 1rem; border-radius: 0.375rem;
+            color: #495057; background-color: transparent; border: none;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        #side-menu .menu-button i { margin-right: 12px; font-size: 1.1rem; width: 20px; text-align: center; }
+        #side-menu .menu-button:hover { background-color: #e9ecef; color: #0d6efd; }
+        #logout-form-container { margin-top: auto; padding-top: 20px; border-top: 1px solid #dee2e6; }
+        #side-menu .logout-button { color: #dc3545; }
+        #side-menu .logout-button:hover { background-color: rgba(220, 53, 69, 0.1); color: #b02a37; }
+        
+        /* --- Main Content Styling for Stepped Layout --- */
+        .page-header-title {
+            font-weight: 500;
+            color: #343a40;
+            margin-bottom: 2rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .step-section {
+            background-color: #ffffff; /* White sections will contrast well with the new blue background */
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            margin-bottom: 2.5rem;
+        }
+        .step-section:last-child {
+            margin-bottom: 1.5rem;
+        }
+        .step-heading {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: #0d6efd;
+            margin-bottom: 1.5rem;
+        }
+        .step-heading .badge {
+            font-size: 0.9rem;
+            padding: 0.5em 0.75em;
+        }
+
+        #map-container {
+            width: 100%; max-width: 1200px; height: 550px; position: relative;
+            background-image: url('{% static "seats/doodoo.jpg" %}' );
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            background-color: #fdfdfd; 
+            padding: 10px; 
+            margin-bottom: 1.5rem; 
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: left;
+        }
+
+        #map-container .h-button button{
+            width: 33px; height: 43px;
+             display: flex; justify-content: center; align-items: center;
+             font-size: 0.9rem;
+        }
+        #map-container .w-button button{
+            width: 43px; height: 33px;
+             display: flex; justify-content: center; align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+        }
+        .btn-query-seats {
+            padding-top: 0.6rem;
+            padding-bottom: 0.6rem;
+        }
+
+        /* --- Styling for Messages/Alerts --- */
+        .alert .bi { /* Bootstrap Icon in alert */
+            font-size: 1.15rem; /* Adjust icon size */
+            vertical-align: text-bottom; /* Better alignment with text */
+        }
+        .alert div { /* Ensure message text part takes up space */
+            flex-grow: 1;
+        }
+        .alert-danger { /* Specific styling for danger/error alerts */
+            font-weight: 500; /* Make text slightly bolder for errors */
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Hamburger Menu Toggle Button (Unchanged) -->
+    <div class="choc-menu-toggle-btn-container">
+        <button id="menu-toggle-btn" type="button" class="btn btn-light btn-lg" aria-label="Toggle navigation menu">
+            <i class="bi bi-list"></i>
+        </button>
+    </div>
+
+    <!-- Side Menu HTML Structure (Unchanged) -->
+    <div id="side-menu">
+        <div class="menu-header">
+            <h5>預約功能</h5>
+            <button id="close-menu-btn" type="button" aria-label="關閉選單">×</button>
+        </div>
+        <button type="button" class="menu-button" onclick="window.location.href='{% url 'seats:dashboard' %}'"><i class="bi bi-house-door-fill"></i> 主選單</button>
+        <button type="button" class="menu-button" onclick="window.location.href='{% url 'seats:welcome' %}'"><i class="bi bi-grid-1x2-fill"></i> 即時座位圖</button>
+        <button type="button" class="menu-button" onclick="window.location.href='{% url 'seats:res_time' %}'"><i class="bi bi-calendar-plus-fill"></i> 預約座位</button>
+        <button type="button" class="menu-button" onclick="window.location.href='{% url 'seats:reminds' %}'"><i class="bi bi-exclamation-octagon-fill"></i> 檢舉系統</button>
+        <button type="button" class="menu-button" onclick="window.location.href='{% url 'seats:records' %}'"><i class="bi bi-person-lines-fill"></i> 個人紀錄</button>
+        <div id="logout-form-container">
+            <form id="logout-form-welcome" method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="menu-button logout-button"><i class="bi bi-box-arrow-right"></i> 登出</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main content starts here -->
+    <div class="container mt-5">
+        {% comment %} <h3 class="page-header-title">挑選預約時間與座位</h3> {% endcomment %}
+
+        <!-- MODIFIED: Enhanced Messages Display -->
+        {% if messages %}
+            <div class="messages-container mb-4">
+            {% for message in messages %}
+                {% comment %} Determine alert class and icon based on message tags {% endcomment %}
+                {% if message.tags == "error" or message.tags == "danger" %}
+                    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center" role="alert">
+                        <i class="bi bi-x-octagon-fill flex-shrink-0 me-2"></i>
+                        <div>{{ message }}</div>
+                        <button type="button" class="btn-close ms-auto p-2" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% elif message.tags == "success" %}
+                    <div class="alert alert-success alert-dismissible fade show d-flex align-items-center" role="alert">
+                        <i class="bi bi-check-circle-fill flex-shrink-0 me-2"></i>
+                        <div>{{ message }}</div>
+                        <button type="button" class="btn-close ms-auto p-2" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% elif message.tags == "warning" %}
+                    <div class="alert alert-warning alert-dismissible fade show d-flex align-items-center" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2"></i>
+                        <div>{{ message }}</div>
+                        <button type="button" class="btn-close ms-auto p-2" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% else %} {# Default to info or use message.tags for color #}
+                    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show d-flex align-items-center" role="alert">
+                        <i class="bi bi-info-circle-fill flex-shrink-0 me-2"></i>
+                        <div>{{ message }}</div>
+                        <button type="button" class="btn-close ms-auto p-2" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endif %}
+            {% endfor %}
+            </div>
+        {% endif %}
+        <!-- END MODIFIED: Enhanced Messages Display -->
+
+        <!-- Step 1: Time Selection -->
+        <section class="step-section" id="time-selection-step">
+            <h4 class="step-heading">
+                <span class="badge bg-primary rounded-pill me-2">1</span> 選擇日期與時間
+            </h4>
+            <form method="get" action="{% url 'seats:res_time' %}">
+                <div class="row gy-3 align-items-end">
+                    <div class="col-md-4">
+                        <label for="date" class="form-label">日期</label>
+                        <select name="date" id="date" class="form-select form-select-lg" required>
+                            {% for day in date_options %}
+                                <option value="{{ day }}" {% if request.GET.date == day %}selected{% endif %}>
+                                    {{ day }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="start_time_select" class="form-label">開始時間</label>
+                        <select name="start_time" id="start_time_select" class="form-select form-select-lg" required>
+                            {% for time in time_slots %}
+                                <option value="{{ time }}" {% if request.GET.start_time == time %}selected{% endif %}>
+                                    {{ time }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="end_time_select" class="form-label">結束時間</label>
+                        <select name="end_time" id="end_time_select" class="form-select form-select-lg" required>
+                            {% for time in time_slots %}
+                                <option value="{{ time }}" {% if request.GET.end_time == time %}selected{% endif %}>
+                                    {{ time }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary w-100 btn-lg btn-query-seats">查詢座位</button>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <!-- Step 2: Seat Selection & Confirmation -->
+        {% if request.GET.date and request.GET.start_time and request.GET.end_time %}
+        <section class="step-section" id="seat-selection-step">
+            <h4 class="step-heading">
+                <span class="badge bg-primary rounded-pill me-2">2</span> 選擇您的座位
+            </h4>
+            <form method="post" action="{% url 'seats:make_reservation' %}" id="reservation-form">
+                {% csrf_token %}
+                <input type="hidden" name="seat_id" id="seat-id" required>
+                <input type="hidden" name="date" value="{{ request.GET.date|default_if_none:'' }}" id="form_date">
+                <input type="hidden" name="start_time" value="{{ request.GET.start_time|default_if_none:'' }}" id="form_start_time">
+                <input type="hidden" name="end_time" value="{{ request.GET.end_time|default_if_none:'' }}" id="form_end_time">
+
+                <div id="map-container">
+                    {% if seats %}
+                        <div class="w-button">
+                            {% for seat in seats %}
+                                {% if seat.name|slice:":1" == "P"%}
+                                    {% if seat.id in reserved_seat_ids %}
+                                        {% if seat.id in user_reserved_seat_ids %}
+                                            <button type="button" class="btn btn-warning position-absolute"
+                                                    style="left: {{ seat.x }}px; top: {{ seat.y }}px; background-color:rgb(63, 124, 255); color:white"
+                                                    disabled data-bs-toggle="tooltip" title="您已預約此座位">
+                                                {{ seat.name }} 
+                                            </button>
+                                        {% else %}
+                                            <button type="button" class="btn btn-danger position-absolute"
+                                                    style="left: {{ seat.x }}px; top: {{ seat.y }}px;background-color:rgb(221, 54, 71);px;color:white"
+                                                    disabled data-bs-toggle="tooltip" title="此座位已被預約">
+                                                {{ seat.name }}
+                                            </button>
+                                        {% endif %}
+                                    {% else %}
+                                        <button type="button" class="btn btn-outline-primary position-absolute seat-button"
+                                                style="left: {{ seat.x }}px; top: {{ seat.y }}px;color:white"
+                                                data-seat-id="{{ seat.id }}" data-seat-name="{{ seat.name }}"
+                                                data-bs-toggle="tooltip" title="點擊選擇 {{ seat.name }}">
+                                            {{ seat.name }}
+                                        </button>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+
+                        <div class="h-button">
+                            {% for seat in seats %}
+                                {% if seat.name|slice:":1" != "P" %}
+                                    {% if seat.id in reserved_seat_ids %}
+                                        {% if seat.id in user_reserved_seat_ids %}
+                                            <button type="button" class="btn btn-warning position-absolute "
+                                                    style="left: {{ seat.x }}px; top: {{ seat.y }}px; background-color:rgb(63, 124, 255); color:white;"
+                                                    disabled data-bs-toggle="tooltip" title="您已預約此座位">
+                                                {{ seat.name }} 
+                                            </button>
+                                        {% else %}
+                                            <button type="button" class="btn btn-danger position-absolute"
+                                                    style="left: {{ seat.x }}px; top: {{ seat.y }}px;background-color:rgb(221, 54, 71);px;color:white"
+                                                    disabled data-bs-toggle="tooltip" title="此座位已被預約">
+                                                {{ seat.name }}
+                                            </button>
+                                        {% endif %}
+                                    {% else %}
+                                        <button type="button" class="btn btn-outline-primary position-absolute seat-button"
+                                                style="left: {{ seat.x }}px; top: {{ seat.y }}px;color:white"
+                                                data-seat-id="{{ seat.id }}" data-seat-name="{{ seat.name }}"
+                                                data-bs-toggle="tooltip" title="點擊選擇 {{ seat.name }}">
+                                            {{ seat.name }}
+                                        </button>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="d-flex justify-content-center align-items-center h-100">
+                            <p class="text-muted p-5 mb-0 fs-5">此時段無符合條件的座位，或目前無座位可供預約。</p>
+                        </div>
+                    {% endif %}
+                </div>
+                                
+                <div class="text-center mt-4">
+                     <button type="submit" class="btn btn-success btn-lg px-5 py-3" id="confirm-reservation-btn" {% if not seats %}disabled{% endif %}>
+                        確認預約 <span id="selected-seat-name"></span>
+                    </button>
+                </div>
+            </form>
+        </section>
+        {% elif not request.GET.date %}
+            <div class="alert alert-info text-center fs-5 p-4 d-flex align-items-center" role="alert">
+                 <i class="bi bi-info-circle-fill flex-shrink-0 me-3"></i>
+                 <div>請先於上方選擇日期、時間，然後點擊「查詢座位」以查看可預約的座位。</div>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        const dateSelect = document.getElementById('date');
+        const startTimeSelect = document.getElementById('start_time_select');
+        const endTimeSelect = document.getElementById('end_time_select');
+        const formDate = document.getElementById('form_date');
+        const formStartTime = document.getElementById('form_start_time');
+        const formEndTime = document.getElementById('form_end_time');
+        const confirmReservationBtn = document.getElementById('confirm-reservation-btn');
+        const selectedSeatNameSpan = document.getElementById('selected-seat-name');
+        const mapContainer = document.getElementById('map-container');
+
+        function updateReservationFormFields() {
+            if (dateSelect) formDate.value = dateSelect.value;
+            if (startTimeSelect) formStartTime.value = startTimeSelect.value;
+            if (endTimeSelect) formEndTime.value = endTimeSelect.value;
+        }
+
+        if(dateSelect) dateSelect.addEventListener('change', updateReservationFormFields);
+        if(startTimeSelect) startTimeSelect.addEventListener('change', updateReservationFormFields);
+        if(endTimeSelect) endTimeSelect.addEventListener('change', updateReservationFormFields);
+        
+        updateReservationFormFields();
+
+        document.querySelectorAll('#map-container .seat-button').forEach(button => {
+            button.addEventListener('click', function () {
+                const seatId = this.dataset.seatId;
+                const seatName = this.dataset.seatName;
+                if (document.getElementById('seat-id')) {
+                    document.getElementById('seat-id').value = seatId;
+                }
+                if(selectedSeatNameSpan) selectedSeatNameSpan.textContent = `(${seatName})`;
+
+                document.querySelectorAll('#map-container .seat-button').forEach(btn => {
+                    btn.classList.remove('btn-primary', 'fw-bold');
+                    btn.classList.add('btn-outline-primary');
+                });
+                this.classList.remove('btn-outline-primary');
+                this.classList.add('btn-primary', 'fw-bold');
+                
+                checkConfirmButtonState();
+            });
+        });
+        
+        function checkConfirmButtonState() {
+            if (!confirmReservationBtn) return;
+
+            const seatIdInput = document.getElementById('seat-id');
+            const seatIdSelected = seatIdInput && seatIdInput.value;
+            const dateTimeSelected = formDate && formDate.value && formStartTime && formStartTime.value && formEndTime && formEndTime.value;
+            const seatsAvailable = mapContainer && mapContainer.querySelector('.seat-button');
+
+            if (seatIdSelected && dateTimeSelected && seatsAvailable) {
+                confirmReservationBtn.disabled = false;
+            } else {
+                confirmReservationBtn.disabled = true;
+            }
+        }
+        
+        checkConfirmButtonState();
+        if(dateSelect) dateSelect.addEventListener('change', checkConfirmButtonState);
+        if(startTimeSelect) startTimeSelect.addEventListener('change', checkConfirmButtonState);
+        if(endTimeSelect) endTimeSelect.addEventListener('change', checkConfirmButtonState);
+
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+          return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+
+        var alertList = document.querySelectorAll('.alert-dismissible')
+        alertList.forEach(function (alert) {
+          new bootstrap.Alert(alert)
+        })
+
+    </script>
+
+    <script>
+    // SIDEMENU JAVASCRIPT - UNCHANGED
+    document.addEventListener('DOMContentLoaded', function () {
+        const menuToggleButton = document.getElementById('menu-toggle-btn');
+        const sideMenu = document.getElementById('side-menu');
+        const closeMenuButton = document.getElementById('close-menu-btn');
+        const bodyElement = document.body;
+
+        function openMenu() {
+            if(sideMenu && bodyElement){
+                sideMenu.classList.add('open');
+                bodyElement.classList.add('menu-open');
+                try { document.cookie = "menu_open_cookie=true; path=/; SameSite=Lax"; } catch(e) { console.warn("Could not set cookie", e); }
+            }
+        }
+
+        function closeMenu() {
+            if(sideMenu && bodyElement){
+                sideMenu.classList.remove('open');
+                bodyElement.classList.remove('menu-open');
+                try { document.cookie = "menu_open_cookie=false; path=/; SameSite=Lax"; } catch(e) { console.warn("Could not set cookie", e); }
+            }
+        }
+
+        if (menuToggleButton && sideMenu && closeMenuButton && bodyElement) {
+            menuToggleButton.addEventListener('click', (event) => {
+                if (sideMenu.classList.contains('open')) {
+                    closeMenu();
+                } else {
+                    openMenu();
+                }
+                event.stopPropagation();
+            });
+
+            closeMenuButton.addEventListener('click', (event) => {
+                closeMenu();
+                event.stopPropagation();
+            });
+
+            document.addEventListener('click', (event) => {
+                const isClickInsideMenu = sideMenu.contains(event.target);
+                const menuToggleContainer = document.querySelector('.choc-menu-toggle-btn-container');
+                const isClickToggleBtnOrContainer = menuToggleContainer && menuToggleContainer.contains(event.target);
+                
+                if (!isClickInsideMenu && !isClickToggleBtnOrContainer && sideMenu.classList.contains('open')) {
+                    closeMenu();
+                }
+            });
+        }
+
+        if (!menuToggleButton) console.error("Menu toggle button not found!");
+        if (!sideMenu) console.error("Side menu element not found!");
+        if (!closeMenuButton) console.error("Close menu button (inside side-menu) not found!");
+        if (!bodyElement) console.error("Body element not found!");
+
+        checkConfirmButtonState();
+    });
+    document.querySelector("#map-container").addEventListener('click', function(e) {
+    console.log('X:', e.offsetX, 'Y:', e.offsetY);
+});
+    </script>
+    <script>
+    const timeSlots = {{ time_slots|safe }};
+    document.addEventListener("DOMContentLoaded", function () {
+        const startSelect = document.getElementById("start_time_select");
+        const endSelect = document.getElementById("end_time_select");
+
+        function updateEndTimes() {
+            const startTime = startSelect.value;
+            const startIndex = timeSlots.indexOf(startTime);
+
+            // 只取 1 到 3 小時內的時段（30 分鐘間隔 = index+2 到 index+6）
+            const newEndTimes = timeSlots.slice(startIndex+1 , startIndex +4);
+
+            // 清除舊選項
+            endSelect.innerHTML = "";
+
+            // 建立新選項
+            newEndTimes.forEach(function (time) {
+                const option = document.createElement("option");
+                option.value = time;
+                option.textContent = time;
+                endSelect.appendChild(option);
+            });
+        }
+
+        startSelect.addEventListener("change", updateEndTimes);
+
+        // 初始載入時也執行一次
+        updateEndTimes();
+    });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

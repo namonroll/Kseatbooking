@@ -1,0 +1,477 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title|default:"預約辦法 - K center" }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+<style>
+    /* --- 基礎 Body 和佈局樣式 --- */
+    body {
+        padding-top: 1.5rem;
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+        transition: padding-left 0.3s ease-in-out;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background-color: rgb(235, 245, 251);
+        min-height: 100vh;
+        margin: 0;
+        color: #333;
+        display: flex; /* Make body a flex container */
+        flex-direction: column; /* Stack children vertically */
+    }
+    body.menu-open {
+        padding-left: calc(1.5rem + 270px);
+    }
+    .main-content-area {
+        width: 100%;
+        padding-left: 1rem;
+        flex-grow: 1; /* Allow main content to grow and take available space */
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* --- 選單切換按鈕 --- */
+    .choc-menu-toggle-btn-container {
+        position: fixed; right: 25px; top: 25px; z-index: 1050;
+    }
+    #menu-toggle-btn {
+        background-color: #fff; border: 1px solid #ced4da; color: #0d6efd;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1); padding: 0.5rem 0.75rem; line-height: 1;
+    }
+    #menu-toggle-btn:hover { background-color: #e9ecef; }
+    #menu-toggle-btn i { font-size: 1.25rem; }
+
+    /* --- 側邊選單 CSS --- */
+    #side-menu {
+        position: fixed; top: 0; left: 0; width: 270px; height: 100%;
+        background-color: #ffffff; padding: 20px; box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        z-index: 1000; overflow-y: auto; transform: translateX(-270px);
+        transition: transform 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
+        display: flex; flex-direction: column;
+    }
+    #side-menu.open { transform: translateX(0); }
+    #side-menu .menu-header {
+        padding-bottom: 15px; margin-bottom: 20px; border-bottom: 1px solid #dee2e6;
+        display: flex; justify-content: space-between; align-items: center;
+    }
+    #side-menu .menu-header h5 { margin: 0; font-size: 1.2rem; font-weight: 600; color: #212529;}
+    #close-menu-btn { /* This is the X button inside the menu */
+        font-size: 1.6rem; color: #6c757d; background: none; border: none; padding: 0 .5rem; opacity: 0.8;
+    }
+    #close-menu-btn:hover { color: #000; opacity: 1; }
+    #side-menu .menu-button {
+        display: flex; align-items: center; width: 100%; margin-bottom: 10px;
+        padding: 12px 15px; text-align: left; font-size: 1rem; border-radius: 0.375rem;
+        color: #495057; background-color: transparent; border: none;
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
+    #side-menu .menu-button i { margin-right: 12px; font-size: 1.1rem; width: 20px; text-align: center; }
+    #side-menu .menu-button:hover { background-color: #e9ecef; color: #0d6efd; }
+    #side-menu .menu-button.active {
+        background-color: #0d6efd;
+        color: white;
+        font-weight: 500;
+    }
+    #side-menu .menu-button.active i {
+        color: white;
+    }
+    #logout-form-container { margin-top: auto; padding-top: 20px; border-top: 1px solid #dee2e6; }
+    #side-menu .logout-button { color: #dc3545; }
+    #side-menu .logout-button:hover { background-color: rgba(220, 53, 69, 0.1); color: #b02a37; }
+
+    /* --- dashboard.html特有的樣式 (kept for consistency) --- */
+    .dashboard-header {
+        margin-bottom: 2rem;
+        padding: 1.5rem 1rem;
+        background-color: #ffffff;
+        border-radius: .3rem;
+        box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
+    }
+    .dashboard-header .header-title-group h1 {
+        font-weight: 600; color: #212529; font-size: 1.75rem; margin-bottom: 0.25rem;
+    }
+    .dashboard-header .header-title-group p { color: #495057; margin-bottom: 0; }
+
+    .area-card {
+        transition: transform .2s ease-in-out, box-shadow .2s ease-in-out;
+        margin-bottom: 1.5rem; height: 100%; display: flex; flex-direction: column;
+        background-color: #fff; border: 1px solid #dee2e6; border-radius: .375rem;
+    }
+    .area-card:hover { transform: translateY(-5px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; }
+    .area-card img {
+        height: 200px; object-fit: cover; border-top-left-radius: calc(.375rem - 1px);
+        border-top-right-radius: calc(.375rem - 1px);
+    }
+    .area-card .card-body {
+        display: flex; flex-direction: column; justify-content: space-between; flex-grow: 1;
+    }
+    .area-card .card-title { color: #0d6efd; }
+
+    /* STYLES for left panel buttons with ENHANCED AESTHETICS */
+    .custom-left-panel-button {
+        color: white; padding: 0.9rem 1.4rem; font-size: 1.1rem; font-weight: 500;
+        border-radius: 0.5rem; text-align: left; display: flex; align-items: center;
+        transition: transform 0.25s cubic-bezier(0.25, 0.1, 0.25, 1), box-shadow 0.25s cubic-bezier(0.25, 0.1, 0.25, 1), background 0.3s ease;
+        border: none; text-decoration: none; position: relative; overflow: hidden;
+    }
+    .custom-left-panel-button i {
+        font-size: 1.4rem; margin-right: 0.85rem;
+        transition: transform 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+
+    .btn-rules {
+        background: linear-gradient(140deg, #4c8df7, #2a74e9);
+        box-shadow: 0 4px 10px -3px rgba(42, 116, 233, 0.45), 0 2px 3px -2px rgba(0, 0, 0, 0.08);
+    }
+    .btn-rules:hover {
+        background: linear-gradient(140deg, #5b9eff, #3a84f9);
+        color: white; transform: translateY(-4px) scale(1.025);
+        box-shadow: 0 7px 16px -4px rgba(42, 116, 233, 0.5), 0 4px 5px -2px rgba(0,0,0,0.1), 0 0 0 3px rgba(76, 141, 247, 0.35);
+    }
+    .btn-rules:hover i { transform: scale(1.12) rotate(-6deg); }
+    .custom-left-panel-button.btn-rules.active {
+        background: linear-gradient(140deg, #3a84f9, #1a64d9);
+        box-shadow: 0 7px 16px -4px rgba(42, 116, 233, 0.6), 0 4px 5px -2px rgba(0,0,0,0.15), 0 0 0 3px rgba(76, 141, 247, 0.5);
+        transform: translateY(-2px) scale(1.01);
+    }
+
+
+    .btn-faq {
+        background: linear-gradient(140deg, #b09bf8, #8a6fdf);
+        box-shadow: 0 4px 10px -3px rgba(138, 111, 223, 0.45), 0 2px 3px -2px rgba(0, 0, 0, 0.08);
+    }
+    .btn-faq:hover {
+        background: linear-gradient(140deg, #bfaff9, #9a7ff0);
+        color: white; transform: translateY(-4px) scale(1.025);
+        box-shadow: 0 7px 16px -4px rgba(138, 111, 223, 0.5), 0 4px 5px -2px rgba(0,0,0,0.1), 0 0 0 3px rgba(176, 155, 248, 0.35);
+    }
+    .btn-faq:hover i { transform: scale(1.12) rotate(6deg); }
+    .custom-left-panel-button.btn-faq.active {
+        background: linear-gradient(140deg, #9a7ff0, #7a5fcf);
+        box-shadow: 0 7px 16px -4px rgba(138, 111, 223, 0.6), 0 4px 5px -2px rgba(0,0,0,0.15), 0 0 0 3px rgba(176, 155, 248, 0.5);
+        transform: translateY(-2px) scale(1.01);
+    }
+
+    /* NEW STYLE FOR MAIN MENU BUTTON */
+    .btn-main-menu {
+        background: linear-gradient(140deg, #38c172, #28a745); /* Greenish */
+        box-shadow: 0 4px 10px -3px rgba(40, 167, 69, 0.45), 0 2px 3px -2px rgba(0, 0, 0, 0.08);
+    }
+    .btn-main-menu:hover {
+        background: linear-gradient(140deg, #48d685, #2db94f);
+        color: white; transform: translateY(-4px) scale(1.025);
+        box-shadow: 0 7px 16px -4px rgba(40, 167, 69, 0.5), 0 4px 5px -2px rgba(0,0,0,0.1), 0 0 0 3px rgba(56, 193, 114, 0.35);
+    }
+    .btn-main-menu:hover i { transform: scale(1.12) rotate(-3deg); }
+    .custom-left-panel-button.btn-main-menu.active { /* Style for when this button is active (e.g., if on dashboard and this panel was shown) */
+        background: linear-gradient(140deg, #2db94f, #249740);
+        box-shadow: 0 7px 16px -4px rgba(40, 167, 69, 0.6), 0 4px 5px -2px rgba(0,0,0,0.15), 0 0 0 3px rgba(56, 193, 114, 0.5);
+        transform: translateY(-2px) scale(1.01);
+    }
+
+
+    .btn-reserve-now {
+        display: inline-block;
+        font-weight: 400;
+        line-height: 1.5;
+        color: #fff;
+        text-align: center;
+        vertical-align: middle;
+        cursor: pointer;
+        user-select: none;
+        background-color: #0d6efd;
+        border: 1px solid #0d6efd;
+        padding: .375rem .75rem;
+        font-size: 1rem;
+        border-radius: .25rem;
+        transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+    }
+    .btn-reserve-now:hover {
+        color: #fff;
+        background-color: #0b5ed7;
+        border-color: #0a58ca;
+        text-decoration: none;
+    }
+
+    .toast-container-custom {
+        position: fixed; top: 20px; right: 20px; z-index: 1100;
+    }
+    .custom-toast {
+        padding: .75rem 1.25rem; margin-bottom: 1rem; border: 1px solid transparent;
+        border-radius: .25rem; color: #fff; opacity: 0.95;
+        box-shadow: 0 .25rem .75rem rgba(0,0,0,.1); transition: opacity 0.5s ease-out;
+    }
+    .custom-toast.toast-success { background-color: #198754; }
+    .custom-toast.toast-error   { background-color: #dc3545; }
+    .custom-toast.toast-warning { background-color: #ffc107; color: #000; }
+    .custom-toast.toast-info    { background-color: #0dcaf0; color: #000; }
+    .custom-toast.fade-out { opacity: 0; }
+
+    .site-footer {
+        background-color: #343a40;
+        color: #f8f9fa;
+        padding: 2.5rem 0;
+        margin-top: 3rem;
+        font-size: 0.9rem;
+        text-align: center;
+    }
+    .site-footer .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .site-footer p {
+        margin-bottom: 0.5rem;
+    }
+
+    .rules-card .card-body {
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+    .rules-card h5.card-title {
+        color: #343a40;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    .rules-card h6 {
+        color: #0d6efd;
+        font-weight: 500;
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+    }
+    .rules-card ul {
+        padding-left: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    .rules-card ul li {
+        margin-bottom: 0.3rem;
+    }
+    .rules-card hr {
+        margin-top: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+</style>
+
+</head>
+<body {% if request.resolver_match.url_name != 'dashboard' and request.COOKIES.menu_open_cookie == 'true' %}class="menu-open"{% endif %}>
+
+<div class="toast-container-custom" id="toast-container-dashboard"></div>
+
+<div id="side-menu" {% if request.resolver_match.url_name != 'dashboard' and request.COOKIES.menu_open_cookie == 'true' %}class="open"{% endif %}>
+    <div class="menu-header">
+        <h5>預約功能</h5>
+        <button id="close-menu-btn" type="button" aria-label="關閉選單">×</button> {# This is the X button inside menu #}
+    </div>
+    {# MODIFIED onclick attributes below to include appSideMenuClose() #}
+    <button type="button" class="menu-button {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+            onclick="appSideMenuClose(); window.location.href='{% url 'seats:dashboard' %}'">
+        <i class="bi bi-house-door-fill"></i> 主選單
+    </button>
+    <button type="button" class="menu-button {% if request.resolver_match.url_name == 'rules' %}active{% endif %}"
+            onclick="appSideMenuClose(); window.location.href='{% url 'seats:rules' %}'">
+        <i class="bi bi-journal-text"></i> 預約辦法
+    </button>
+    <button type="button" class="menu-button {% if request.resolver_match.url_name == 'faq' %}active{% endif %}"
+            onclick="appSideMenuClose(); window.location.href='{% url 'seats:faq' %}'">
+        <i class="bi bi-question-circle-fill"></i> 常見問題
+    </button>
+    <button type="button" class="menu-button {% if request.resolver_match.url_name == 'welcome' %}active{% endif %}"
+            onclick="appSideMenuClose(); window.location.href='{% url 'seats:welcome' %}'">
+        <i class="bi bi-grid-1x2-fill"></i> 即時座位圖
+    </button>
+    <button type="button" class="menu-button {% if request.resolver_match.url_name == 'res_time' %}active{% endif %}"
+            onclick="appSideMenuClose(); window.location.href='{% url 'seats:res_time' %}'">
+        <i class="bi bi-calendar-plus-fill"></i> 預約座位
+    </button>
+    <button type="button" class="menu-button {% if request.resolver_match.url_name == 'reminds' %}active{% endif %}"
+            onclick="appSideMenuClose(); window.location.href='{% url 'seats:reminds' %}'">
+        <i class="bi bi-exclamation-octagon-fill"></i> 檢舉系統
+    </button>
+    <button type="button" class="menu-button {% if request.resolver_match.url_name == 'records' %}active{% endif %}"
+            onclick="appSideMenuClose(); window.location.href='{% url 'seats:records' %}'">
+        <i class="bi bi-person-lines-fill"></i> 個人紀錄
+    </button>
+    <div id="logout-form-container">
+        <form id="logout-form-dashboard" method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="menu-button logout-button" onclick="appSideMenuClose();">
+                <i class="bi bi-box-arrow-right"></i> 登出
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="main-content-area">
+    <div class="choc-menu-toggle-btn-container">
+        <button id="menu-toggle-btn" type="button" class="btn btn-light btn-lg"> {# This is the hamburger button #}
+            <i class="bi bi-list"></i>
+        </button>
+    </div>
+
+    <div class="container pt-3">
+        <div class="dashboard-header">
+            <div class="header-title-group">
+                <h1>{{ page_title|default:"預約辦法" }}</h1>
+                <p class="lead">{{ welcome_message|default:"本辦法由國立中央大學圖書館制定，旨在維護 K 書中心（以下簡稱「本中心」）的閱覽秩序，作為閱覽規範及執行公務的依據。" }}</p>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-3" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="row mt-4">
+            <div class="col-lg-4 col-md-5 mb-4 mb-md-0">
+                <a href="{% url 'seats:rules' %}"
+                    class="custom-left-panel-button btn-rules d-block mb-3 {% if request.resolver_match.url_name == 'rules' %}active{% endif %}">
+                    <i class="bi bi-journal-text"></i>預約辦法
+                </a>
+                <a href="{% url 'seats:faq' %}"
+                    class="custom-left-panel-button btn-faq d-block mb-3 {% if request.resolver_match.url_name == 'faq' %}active{% endif %}">
+                    <i class="bi bi-question-circle-fill"></i>常見問題
+                </a>
+                {# --- NEW BUTTON ADDED HERE --- #}
+                <a href="{% url 'seats:dashboard' %}"
+                    class="custom-left-panel-button btn-main-menu d-block mb-3 {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <i class="bi bi-house-door-fill"></i>回主選單
+                </a>
+                {# --- END OF NEW BUTTON --- #}
+            </div>
+
+            <div class="col-lg-8 col-md-7">
+                <div class="card shadow-sm rules-card">
+                    <div class="card-body">
+                        <h5 class="card-title">國立中央大學圖書館 K 書中心使用辦法</h5>
+                        <hr>
+                        <h6 class="mt-4">一、使用資格與進出</h6>
+                        <ul>
+                            <li>使用對象：本中心僅限本校學生使用。</li>
+                            <li>進入方式：需憑學生證刷卡進入。</li>
+                        </ul>
+                        <h6 class="mt-4">二、開放時間</h6>
+                        <ul>
+                            <li>學期期間：星期一至星期日，上午 8 時至晚上 11 時。</li>
+                            <li>學期考試期間：於學期考試前一週至考試結束期間，24 小時開放。</li>
+                            <li>不開放日期：國定假日、彈性休假日、校慶補假日及投票日不開放。</li>
+                            <li>特殊時間：寒暑假及校際活動週的開放時間將另行公告。</li>
+                            <li>時間變更：遇有特殊情況，本館得於公告後變更開放時間。</li>
+                        </ul>
+                        <h6 class="mt-4">三、座位預約（新規定）</h6>
+                        <ul>
+                            <li>適用範圍：無論是大 K 區或小 K 區，都必須透過「K 書中心座位管理系統」（以下簡稱「座管系統」）進行預約使用，可選擇現場登記或線上預約。</li>
+                            <li>登記方式：登記方式為線上預約。</li>
+                            <li>預約時長：每次登記以 1 小時為單位，每筆借用以 3 小時為上限。</li>
+                            <li>單一座位：同一使用者在同一時段僅可登記一個座位。使用時間結束後，若無他人預約，可再次登記使用。</li>
+                        </ul>
+                        <h6 class="mt-4">四、使用規範</h6>
+                        <ul>
+                            <li>入座時間：借用者應於借用時間開始後 15 分鐘內入座，逾時未入座可能會被他人舉報，導致該座位開放給下一位預約者使用。</li>
+                            <li>保持肅靜：閱覽室應保持肅靜，禁止使用行動電話。</li>
+                            <li>環境整潔：閱覽室應保持清潔，不得吸煙、飲食、隨意拋棄紙屑雜物。</li>
+                            <li>勿佔用座位：禁止預佔座位，一經發現即予清除。</li>
+                            <li>財物保管：請妥善保管個人財物，以防遭竊，本館對此不負保管責任。</li>
+                            <li>用電安全：禁止私自接用電器用品，以維護公共用電安全。</li>
+                            <li>遺留物品：使用者入座時若發現前一位使用者遺留物品，請送交圖書館人員處理。凡經取消座位後遺留的物品，以及閉館後留在館內的物品，請於場地開放時間內領回；若為易腐敗物，本場地將直接處理。</li>
+                            <li>本人使用：使用者應持本人學生證或教職員工證進行登記及使用，不得冒用他人名義、交換或轉讓他人使用。</li>
+                            <li>勿搬動桌椅：請勿任意搬動桌椅，以免影響其他使用者出入及行走動線。</li>
+                            <li>攜出物品：貴重物品請隨身攜帶，若有遺失，本場地不負保管之責。場地關閉時，須將個人物品攜出。</li>
+                        </ul>
+                        <h6 class="mt-4">五、違規處理</h6>
+                        <ul>
+                            <li>一般違規：若有上述違規行為或其他不当使用狀況，經稽核登記達 3 次，將凍結本中心使用權利半年。</li>
+                            <li>冒用身份：經發現冒用他人名義、交換或轉讓他人使用學生證/教職員工證者，將立即終止其使用座位之權利，並停止其借用權六個月。</li>
+                            <li>其他情事：借用本場地，如有其他特定情事，將被要求立即停止使用，並停止其借用權六個月，且依法處理。</li>
+                        </ul>
+                        <p class="text-muted mt-4">如有任何疑問，請洽詢圖書館服務櫃檯或管理人員。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="site-footer">
+    <div class="container">
+        <p>地址: (320317) 桃園市中壢區中大路300號</p>
+        <p>總機電話: 03-4267126</p>
+        <p>緊急事件聯絡電話:</p>
+        <p>03-4267144 (校內分機57119-駐警隊)</p>
+    </div>
+</footer>
+
+<script>
+    // Globally scoped variables to be initialized on DOMContentLoaded
+    let appSideMenuEl = null;
+    let appBodyEl = null;
+
+    // Globally scoped function to close the side menu
+    function appSideMenuClose() {
+        if (appSideMenuEl && appBodyEl) {
+            appSideMenuEl.classList.remove('open');
+            appBodyEl.classList.remove('menu-open');
+            document.cookie = "menu_open_cookie=false;path=/;SameSite=Lax";
+        }
+    }
+
+    // Globally scoped function to open the side menu
+    function appSideMenuOpen() {
+        if (appSideMenuEl && appBodyEl) {
+            appSideMenuEl.classList.add('open');
+            appBodyEl.classList.add('menu-open');
+            document.cookie = "menu_open_cookie=true;path=/;SameSite=Lax";
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize global DOM element variables
+        appSideMenuEl = document.getElementById('side-menu');
+        appBodyEl = document.body;
+
+        const menuToggleBtn = document.getElementById('menu-toggle-btn'); // Hamburger button
+        const closeMenuBtnInsideMenu = document.getElementById('close-menu-btn'); // X button inside menu
+
+        // --- Initial menu state logic for dashboard page ---
+        // It's important that `request.resolver_match.url_name` is correctly passed to the template context by your Django view.
+        const currentUrlName = "{{ request.resolver_match.url_name|default:'' }}";
+        const isDashboardPage = currentUrlName === "dashboard";
+
+        if (isDashboardPage) {
+            // On dashboard, ensure menu is closed initially and cookie is set to false
+            if (appBodyEl.classList.contains('menu-open') || (appSideMenuEl && appSideMenuEl.classList.contains('open'))) {
+                appSideMenuClose();
+            }
+        }
+        // For other pages, the server-side rendering based on cookie handles initial state.
+        // Our modification to menu item clicks (calling appSideMenuClose) ensures cookie is 'false' before navigation.
+
+        // Event listener for the main toggle (hamburger) button
+        if (menuToggleBtn) {
+            menuToggleBtn.addEventListener('click', function() {
+                if (appSideMenuEl && appSideMenuEl.classList.contains('open')) {
+                    appSideMenuClose();
+                } else {
+                    appSideMenuOpen();
+                }
+            });
+        }
+
+        // Event listener for the close button (X) inside the menu
+        if (closeMenuBtnInsideMenu) {
+            closeMenuBtnInsideMenu.addEventListener('click', function() {
+                appSideMenuClose();
+            });
+        }
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

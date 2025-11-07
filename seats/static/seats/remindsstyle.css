@@ -1,0 +1,13 @@
+/* remindsstyle.css */
+body{
+    padding:100px;
+    padding-top: 10px;;
+}
+
+#map-container {
+    position: relative;
+    width: 400px;
+    height: 300px;  /* 根據你圖片實際高度調整 */
+    background-image: url('doodoo.jpg'); 
+    background-size: cover;
+}

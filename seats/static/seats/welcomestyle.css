@@ -1,0 +1,21 @@
+/* welcomestyle.css */
+body{
+    padding:500px;
+    padding-top: 50px;
+}
+.realtime-seat{
+    border: 1px solid ;
+    height: 500px;
+}
+.choc button{
+    position: absolute;
+    right: 0;
+    top: 120px;
+    margin-right: 110px;
+}
+#map-container {
+    width: 900px;
+    position: relative;
+    background-image: url('doodoo.jpg'); 
+    background-size: cover;
+}

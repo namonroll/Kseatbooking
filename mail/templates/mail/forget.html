@@ -1,0 +1,382 @@
+{% comment %} mail/templates/login {% endcomment %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>忘記密碼</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" href="{% static 'S__25559045.png' %}" type="image/png" />
+    <link rel="shortcut icon" href="{% static 'S__25559045.png' %}" type="image/png" />
+    {# 請確保這個 styles.css 包含了您統一過後的 auth_forms_refined.css 內容 #}
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+    {# 如果有使用 Bootstrap Icons，請確保引入，以使用圖標效果 #}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    
+    <style>
+        /* 由於您希望沿用原有 class，這裡確保這些 class 有基本樣式 */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f2f5; /* 與 auth_forms_option2 相似的背景 */
+        }
+        .forget-box {
+            background-color: white;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0px 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 380px; /* 統一寬度，方便排版 */
+            max-width: 90%;
+            position: relative;
+        }
+        h2 { /* 使用 H2 標籤的樣式 */
+            margin-bottom: 25px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #3f51b5; 
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left; /* 讓 label 和 input 靠左對齊 */
+        }
+        .form-group label { /* 增加 label 樣式 */
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 16px;
+        }
+        /* 假設 form.email, form.verification_code 等會渲染為 input 標籤 */
+        .forget-box input[type="email"],
+        .forget-box input[type="text"],
+        .forget-box input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            outline: none;
+            font-size: 16px;
+        }
+        .forget-box input[type="email"]:focus,
+        .forget-box input[type="text"]:focus,
+        .forget-box input[type="password"]:focus {
+            border-color: #80bdff;
+            box-shadow: 0 0 0 0.25rem rgba(13,110,253,.25);
+        }
+
+        .cre-btn, .register-btn { /* 統一按鈕樣式 */
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 30px;
+            background-color: #2196f3;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 15px; /* 給按鈕一些間距 */
+        }
+        .cre-btn:hover, .register-btn:hover {
+            background-color: #1976d2;
+        }
+        .back-to-login {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            font-size: 18px;
+            color: #6a737d;
+            text-decoration: none;
+            background: rgba(255,255,255,0.7);
+            padding: 6px 10px;
+            border-radius: 8px;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .back-to-login:hover {
+            background: #e9e9e9;
+            color: #3f51b5;
+        }
+        .toast-container { /* 保持 Toast 樣式 */
+            position: fixed;
+            top: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1050;
+        }
+        .toast {
+            background-color: #4CAF50;
+            color: white;
+            padding: 14px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            font-size: 16px;
+            opacity: 1;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            margin-bottom: 10px;
+        }
+        .toast-error { background-color: #f44336; }
+        .toast-success { background-color: #4CAF50; } /* 成功提示 */
+        .toast-warning { background-color: #ff9800; }
+        .toast-info { background-color: #2196f3; } /* 資訊提示，用於重新寄送 */
+        .fade-out {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        ul.errorlist { /* Django Form errors 樣式 */
+            color: #f44336;
+            margin-top: 5px;
+            padding-left: 0;
+            list-style: none;
+            font-size: 14px;
+            text-align: left;
+        }
+        .text-container{
+            position: fixed;
+            top: 2px;
+            text-align: center;
+            width: 40%;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.5);
+            z-index: 10000;
+        }
+    </style>
+</head>
+
+<body>
+        <div class="text-container">
+  {% if messages %}
+  <ul>
+    {% for message in messages %}
+      <li> {{ message }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+</div>
+    <div id="toast-container" style="position: fixed; top: 1rem; right: 1rem; z-index: 9999;"></div>
+
+    <div class="forget-box">
+        <a href="{% url 'login' %}" class="back-to-login">←</a>
+        <h2>重設密碼</h2>
+
+        <form method="POST" id="forget-password-form">
+            {% csrf_token %}
+
+            {# 隱藏的 email 欄位，確保在所有階段都能提交 #}
+            {# 如果 form.email 預設渲染一個 <input type="email">，則無需重複 #}
+            {# 但如果它只渲染值，或在非 Email 階段被隱藏，則需要一個隱藏欄位來傳遞 Email #}
+            <input type="hidden" name="email" value="{{ form.email.value|default_if_none:'' }}" id="hidden_email">
+            <input type="hidden" name="verification_code" value="{{ form.verification_code.value|default_if_none:'' }}" id="hidden_verification_code">
+
+
+            <div id="stage-email">
+                <div class="form-group">
+                    <label for="{{ form.email.id_for_label }}">
+                        <i class="bi bi-envelope-fill"></i> 電子郵件
+                    </label>
+                    {# 讓 Email 欄位在非 Email 階段隱藏，但值會透過 hidden input 傳遞 #}
+                    {{ form.email }}
+                    {% if form.email.errors %}{{ form.email.errors }}{% endif %}
+                </div>
+                <button type="submit" name="action" value="send_code" class="cre-btn">寄送驗證碼</button>
+            </div>
+
+            <div id="stage-verification" style="display: none;">
+                <div class="form-group">
+                    <label for="{{ form.verification_code.id_for_label }}">
+                        <i class="bi bi-key-fill"></i> 驗證碼
+                    </label>
+                    {{ form.verification_code }}
+                    {% if form.verification_code.errors %}{{ form.verification_code.errors }}{% endif %}
+                </div>
+                <button type="submit" name="action" value="verify_code" class="cre-btn">確認驗證碼</button>
+                <p style="margin-top: 15px; font-size: 14px; color: #6a737d;">
+                    沒有收到驗證碼？<a href="#" id="resend-code-link" style="color: #0d6efd; text-decoration: none;">重新寄送</a>
+                </p>
+            </div>
+
+            <div id="stage-password" style="display: none;">
+                <div class="form-group">
+                    <label for="{{ form.password.id_for_label }}">
+                        <i class="bi bi-lock-fill"></i> 新密碼
+                    </label>
+                    {{ form.password }}
+                    {% if form.password.errors %}{{ form.password.errors }}{% endif %}
+                </div>
+                <div class="form-group">
+                    <label for="{{ form.confirm_password.id_for_label }}">
+                        <i class="bi bi-check-circle-fill"></i> 確認新密碼
+                    </label>
+                    {{ form.confirm_password }}
+                    {% if form.confirm_password.errors %}{{ form.confirm_password.errors }}{% endif %}
+                </div>
+                <button type="submit" name="action" value="reset_password" class="register-btn">重設密碼</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // 您的 Toast 顯示邏輯 (與您原來的相同，但確保函數可用)
+        function showToast(message, type) {
+            var toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) return;
+
+            var toast = document.createElement('div');
+            toast.className = 'toast toast-' + type; // 確保 toast-{{ message.tags }} 能正確應用 CSS
+            toast.textContent = message;
+            toastContainer.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('fade-out');
+                toast.addEventListener('transitionend', () => toast.remove());
+            }, 3000);
+        }
+
+        // Django messages 的自動顯示
+        {% if messages %}
+            {% for message in messages %}
+                // 這裡的 message.tags 可能會是 'success', 'error', 'warning', 'info'
+                showToast("{{ message|escapejs }}", "{{ message.tags }}");
+            {% endfor %}
+        {% endif %}
+
+        // --- 階段控制 JavaScript ---
+        document.addEventListener('DOMContentLoaded', function() {
+            const stageEmail = document.getElementById('stage-email');
+            const stageVerification = document.getElementById('stage-verification');
+            const stagePassword = document.getElementById('stage-password');
+            const resendCodeLink = document.getElementById('resend-code-link');
+            const form = document.getElementById('forget-password-form');
+            const emailInput = document.getElementById('id_email'); // 獲取 Email 欄位本身
+            const verificationCodeInput = document.getElementById('id_verification_code'); // 獲取驗證碼欄位本身
+
+            // 讀取 Django 後端傳遞的 current_stage 變數
+            const currentStage = "{{ current_stage|escapejs }}";
+
+            // 根據 currentStage 顯示對應的階段
+            stageEmail.style.display = 'none';
+            stageVerification.style.display = 'none';
+            stagePassword.style.display = 'none';
+
+            if (currentStage === 'email') {
+                stageEmail.style.display = 'block';
+            } else if (currentStage === 'verification') {
+                stageVerification.style.display = 'block';
+            } else if (currentStage === 'password') {
+                stagePassword.style.display = 'block';
+            }
+
+            // --- 處理 Email 欄位的持久化和隱藏 ---
+            // 每次頁面載入時，將實際 Email 欄位的值同步到隱藏欄位
+            const hiddenEmailInput = document.getElementById('hidden_email');
+            if (emailInput && hiddenEmailInput) {
+                hiddenEmailInput.value = emailInput.value;
+                // 如果不是 Email 階段，則隱藏 Email 欄位本身
+                if (currentStage !== 'email') {
+                    emailInput.style.display = 'none';
+                    // 同步 Email 欄位的禁用狀態，避免瀏覽器自動填充
+                    emailInput.disabled = true;
+                } else {
+                    emailInput.disabled = false; // 確保在 Email 階段可以輸入
+                }
+            }
+
+            // --- 處理 Verification Code 欄位的持久化和隱藏 ---
+            const hiddenVerificationCodeInput = document.getElementById('hidden_verification_code');
+            if (verificationCodeInput && hiddenVerificationCodeInput) {
+                hiddenVerificationCodeInput.value = verificationCodeInput.value;
+                 if (currentStage !== 'verification' && currentStage !== 'password') {
+                    verificationCodeInput.style.display = 'none';
+                    verificationCodeInput.disabled = true;
+                } else {
+                    verificationCodeInput.disabled = false;
+                }
+            }
+
+
+            // 處理重新寄送驗證碼連結 (不刷新頁面提交)
+            if (resendCodeLink) {
+                resendCodeLink.addEventListener('click', function(event) {
+                    event.preventDefault();
+
+                    const email = hiddenEmailInput ? hiddenEmailInput.value : '';
+
+                    if (!email) {
+                        showToast('請先輸入您的電子郵件地址。', 'warning');
+                        return;
+                    }
+
+                    // 創建一個隱藏的表單來提交重新發送請求
+                    const tempForm = document.createElement('form');
+                    tempForm.method = 'POST';
+                    tempForm.action = form.action;
+
+                    // 添加 CSRF token
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = 'csrfmiddlewaretoken';
+                    const csrfTokenElement = form.querySelector('[name="csrfmiddlewaretoken"]');
+                    if (csrfTokenElement) {
+                        csrfInput.value = csrfTokenElement.value;
+                    }
+                    tempForm.appendChild(csrfInput);
+
+                    // 添加 Email 欄位（因為 Email 可能在原表單中被隱藏了）
+                    const emailHiddenInputForResend = document.createElement('input');
+                    emailHiddenInputForResend.type = 'hidden';
+                    emailHiddenInputForResend.name = 'email';
+                    emailHiddenInputForResend.value = email;
+                    tempForm.appendChild(emailHiddenInputForResend);
+
+                    // 添加 action 欄位，告知後端這是發送驗證碼的請求
+                    const actionHiddenInput = document.createElement('input');
+                    actionHiddenInput.type = 'hidden';
+                    actionHiddenInput.name = 'action';
+                    actionHiddenInput.value = 'send_code';
+                    tempForm.appendChild(actionHiddenInput);
+                    
+                    document.body.appendChild(tempForm);
+                    tempForm.submit();
+
+                    showToast('正在重新寄送驗證碼...', 'info');
+                });
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+    // 原有 toastContainer、form 處理邏輯...
+
+    {% if messages %}
+        {% for message in messages %}
+            showToast("{{ message|escapejs }}", "{{ message.tags }}");
+        {% endfor %}
+    {% endif %}
+});
+    </script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function () {
+  document.getElementById("forget-password-form").addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+      event.preventDefault();  // 阻止預設行為
+
+      // 根據階段，觸發正確按鈕
+      const stage = "{{ current_stage }}";
+      if (stage === "email") {
+        document.querySelector('button[name="action"][value="send_code"]').click();
+      } else if (stage === "verification") {
+        document.querySelector('button[name="action"][value="verify_code"]').click();
+      } else if (stage === "password") {
+        document.querySelector('button[name="action"][value="reset_password"]').click();
+      }
+    }
+  });
+});
+    </script>
+</body>
+</html>
+
+

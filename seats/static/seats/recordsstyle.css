@@ -1,0 +1,10 @@
+/* recordsstyle.css */
+body{
+    padding:100px;
+    padding-top: 50px;;
+}
+.records{
+    border: 1px solid;
+    height: 500px;
+    margin-bottom: 20px;
+}

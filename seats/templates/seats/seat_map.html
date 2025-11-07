@@ -1,0 +1,292 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page_title|default:"挑選座位" }} - K書中心</title> {# 使用從 view 傳遞的 page_title #}
+    <link rel="stylesheet" type="text/css" href="{% static 'seats/seat_mapstyle.css' %}"> {# 你原有的 seat_map 特定樣式 #}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        /* 基本 body 樣式，為選單打開時留出空間 */
+        body {
+            padding-top: 20px; /* 給頁面頂部一些空間 */
+            padding-left: 20px;
+            padding-right: 20px;
+            transition: padding-left 0.3s ease-in-out;
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa; /* 頁面背景色 */
+            min-height: 100vh;
+            margin: 0;
+        }
+        body.menu-open {
+            padding-left: calc(20px + 250px); /* 原始左邊距 + 選單寬度 */
+        }
+
+        /* --- 側邊選單的 CSS 樣式 (來自你之前的 welcome.html) --- */
+        .choc-menu-toggle-btn-container { /* 選單按鈕容器，固定在右上角 */
+            position: fixed;
+            right: 20px;
+            top: 20px;
+            z-index: 1001;
+        }
+        #side-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100%;
+            background-color: #f8f9fa; /* 選單背景色 */
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            z-index: 1000;
+            overflow-y: auto;
+            transform: translateX(-250px); /* 預設隱藏 */
+            transition: transform 0.3s ease-in-out;
+        }
+        #side-menu.open {
+            transform: translateX(0); /* 顯示 */
+        }
+        #side-menu h5 {
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+        }
+        #side-menu button.btn { /* 選單內所有按鈕 */
+            display: block;
+            width: 100%;
+            margin-bottom: 8px;
+            text-align: left;
+        }
+        #side-menu button.btn-light:hover,
+        #side-menu button.btn-light.active { /* 當前活動頁面的按鈕樣式 */
+            background-color: #0d6efd;
+            border-color: #0a58ca;
+            color: white;
+        }
+        #close-menu-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 1.8em;
+            cursor: pointer;
+            color: #6c757d;
+            background: none;
+            border: none;
+            padding: 0;
+            line-height: 1;
+        }
+        #close-menu-btn:hover {
+            color: #212529;
+        }
+        /* --- 側邊選單 CSS 結束 --- */
+
+        /* seat_map.html 特有的樣式 (例如 #map-container) */
+        .main-content-area {
+            width: 100%;
+        }
+        main { /* 給 main 元素一些內邊距 */
+            padding: 15px;
+            background-color: #fff; /* 主要內容區域的背景色 */
+            border-radius: .375rem;
+            box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
+        }
+        #map-container { /* 你原有的地圖容器樣式，可以根據需要調整 */
+            width: 100%; /* 讓它填滿 main 的寬度 */
+            max-width: 700px; /* 設定一個最大寬度 */
+            height: 450px; /* 調整高度 */
+            position: relative;
+            /* background-image: url('{% static "seats/doodoo.jpg" %}'); */ /* 你的背景圖 */
+            background-color: #e9ecef; /* 如果沒有背景圖，給個背景色 */
+            background-size: cover;
+            background-position: center;
+            margin: 20px auto;
+            border: 1px solid #ccc;
+            /* box-shadow: 0 4px 8px rgba(0,0,0,0.1); */
+            overflow: auto; /* 如果座位多，允許滾動 */
+        }
+        #map-container button { /* 座位按鈕樣式 */
+            position: absolute;
+            width: 40px; /* 或根據你的 doodoo.jpg 調整 */
+            height: 30px; /* 或根據你的 doodoo.jpg 調整 */
+            border: 1px solid #6c757d;
+            font-size: 0.8em;
+            /* 其他樣式... */
+        }
+        /* 頂部的篩選表單樣式 */
+        #filter-form select {
+            margin-right: 10px;
+            padding: .375rem .75rem;
+            font-size: 1rem;
+            border-radius: .25rem;
+            border: 1px solid #ced4da;
+        }
+        /* 頁面標題 */
+        .page-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #333; /* 調整顏色 */
+        }
+
+    </style>
+</head>
+<body {% if request.COOKIES.menu_open_cookie == 'true' %}class="menu-open"{% endif %}>
+
+    {# --- 側邊選單的 HTML 結構 --- #}
+    <div id="side-menu" {% if request.COOKIES.menu_open_cookie == 'true' %}class="open"{% endif %}>
+        <button id="close-menu-btn" type="button" aria-label="關閉選單">×</button>
+        <h5>預約功能</h5>
+        {# 判斷當前頁面並添加 'active' class，使當前選單項高亮 #}
+        <button type="button" class="btn btn-light {% if request.resolver_match.url_name == 'welcome' %}active{% endif %}" onclick="window.location.href='{% url 'seats:welcome' %}'">即時座位圖</button>
+        <button type="button" class="btn btn-light {% if request.resolver_match.url_name == 'res_time' %}active{% endif %}" onclick="window.location.href='{% url 'seats:res_time' %}'">預約座位</button>
+        <button type="button" class="btn btn-light {% if request.resolver_match.url_name == 'reminds' %}active{% endif %}" onclick="window.location.href='{% url 'seats:reminds' %}'">檢舉系統</button>
+        <button type="button" class="btn btn-light {% if request.resolver_match.url_name == 'records' %}active{% endif %}" onclick="window.location.href='{% url 'seats:records' %}'">個人紀錄</button>
+        <hr>
+        <form id="logout-form-seatmap" method="post" action="{% url 'logout' %}"> {# 給表單一個唯一的ID #}
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">登出</button>
+        </form>
+    </div>
+
+    {# --- 主要內容區域 --- #}
+    <div class="main-content-area">
+        {# 選單切換按鈕 (固定在右上角) #}
+        <div class="choc-menu-toggle-btn-container"> {# 使用你定義的 class #}
+            <button id="menu-toggle-btn" type="button" class="btn btn-primary">選單</button>
+        </div>
+
+        {# seat_map.html 頁面的主要內容 #}
+        <div class="container-fluid pt-3"> {# 使用 container-fluid 讓內容更寬 #}
+            {# 返回按鈕，可以考慮放在更顯眼的位置，或者如果選單中有儀表板連結則可省略 #}
+            {# <button type="button" onclick="history.back()" class="btn btn-outline-secondary btn-sm mb-3">❮ 返回</button> #}
+
+            <h3 class="page-header">{{ page_title|default:"挑選座位" }}</h3>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <main>
+                <form id="filter-form" method="get" class="mb-3">
+                    <label for="date-select" class="form-label">選擇日期:</label>
+                    <select id="date-select" name="date" onchange="this.form.submit();" class="form-select d-inline-block w-auto">
+                        <option value="">所有日期</option> {# 或者 "請選擇日期" #}
+                        {% for day_val in date_options %} {# 改用 day_val 避免與 datetime.date 衝突 #}
+                            <option value="{{ day_val }}" {% if selected_date == day_val %}selected{% endif %}>
+                                {{ day_val }}
+                            </option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="time-select" class="form-label ms-2">選擇時段:</label>
+                    <select id="time-select" name="time" onchange="this.form.submit();" class="form-select d-inline-block w-auto">
+                        <option value="">所有時段</option> {# 或者 "請選擇時段" #}
+                        {% for time_val in time_slots %} {# 改用 time_val #}
+                            <option value="{{ time_val }}" {% if selected_time == time_val %}selected{% endif %}>
+                                {{ time_val }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
+
+                <div id="map-container">
+                    {% if seats %}
+                        {% for seat in seats %}
+                            {# 根據 selected_date 和 selected_time，決定座位的狀態 #}
+                            {% if seat.id in reserved_seat_ids %}
+                                <button class="seat-button btn btn-danger" style="left: {{ seat.x }}px; top: {{ seat.y }}px;" disabled title="已被預約">
+                                    {{ seat.name }}
+                                </button>
+                            {% else %}
+                                <button class="seat-button btn btn-success" style="left: {{ seat.x }}px; top: {{ seat.y }}px;" title="可預約">
+                                    {{ seat.name }}
+                                </button>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <p>沒有可顯示的座位。</p>
+                    {% endif %}
+                </div>
+
+                {# 「取消預約」和「確認預約」按鈕在這裡的邏輯可能需要重新思考 #}
+                {# 通常在座位圖上點擊某個可預約座位後，會跳轉到一個確認預約的頁面或彈出確認框 #}
+                {# 而不是直接在這裡放一個通用的「確認預約」按鈕 #}
+                {# <button type="button" class="btn btn-primary mt-3">取消預約</button> #}
+                {# <button type="button" class="btn btn-primary mt-3">確認預約</button> #}
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // --- 選單開關的 JavaScript (與 dashboard.html 中的一致) ---
+        document.addEventListener('DOMContentLoaded', function () {
+            const menuToggleButton = document.getElementById('menu-toggle-btn');
+            const sideMenu = document.getElementById('side-menu');
+            const closeMenuButton = document.getElementById('close-menu-btn');
+            const bodyElement = document.body;
+
+            function openMenu() { /* ... */ sideMenu.classList.add('open'); bodyElement.classList.add('menu-open'); }
+            function closeMenu() { /* ... */ sideMenu.classList.remove('open'); bodyElement.classList.remove('menu-open'); }
+
+            if (menuToggleButton && sideMenu && closeMenuButton && bodyElement) {
+                menuToggleButton.addEventListener('click', (event) => {
+                    if (sideMenu.classList.contains('open')) { closeMenu(); } else { openMenu(); }
+                    event.stopPropagation();
+                });
+                closeMenuButton.addEventListener('click', (event) => {
+                    closeMenu(); event.stopPropagation();
+                });
+                document.addEventListener('click', (event) => {
+                    const isClickInsideMenu = sideMenu.contains(event.target);
+                    const isClickToggleBtn = menuToggleButton.contains(event.target) || event.target === menuToggleButton;
+                    const isClickCloseBtn = closeMenuButton.contains(event.target) || event.target === closeMenuButton;
+                    if (!isClickInsideMenu && !isClickToggleBtn && !isClickCloseBtn && sideMenu.classList.contains('open')) {
+                         closeMenu();
+                    }
+                });
+            } else {
+                if (!menuToggleButton) console.error("選單切換按鈕 (ID: menu-toggle-btn) 未找到!");
+                // ... 其他元素檢查 ...
+            }
+
+            // --- seat_map.html 特有的 JavaScript ---
+            const mapContainer = document.getElementById('map-container');
+            if(mapContainer){
+                mapContainer.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('seat-button') && !e.target.disabled) {
+                        // 如果點擊的是一個可預約的座位按鈕
+                        const seatName = e.target.textContent.trim();
+                        const selectedDate = document.getElementById('date-select').value;
+                        const selectedTime = document.getElementById('time-select').value; // 注意：seat_map 目前是選時間點
+
+                        // 這裡的邏輯需要調整，因為 seat_map 是選時間點，而預約通常需要時間範圍
+                        // 你可能需要將這些資訊帶到 res_time 頁面去選擇結束時間並確認預約
+                        // 或者，如果 seat_map 也是選時間範圍，那麼表單和後端邏輯需要對應修改
+                        if (selectedDate && selectedTime) {
+                             // alert(`您選擇了座位 ${seatName}，日期 ${selectedDate}，時段 ${selectedTime}。請前往預約頁面確認。`);
+                             // 可以考慮跳轉到 res_time 並預填這些值
+                             // window.location.href = `{% url 'seats:res_time' %}?date=${selectedDate}&start_time=${selectedTime}&seat=${seatName}`;
+                             console.log(`點擊座位 ${seatName}, 日期 ${selectedDate}, 時段 ${selectedTime}`);
+                        } else {
+                            // alert("請先選擇日期和時段。");
+                            console.log(`點擊座位 ${seatName}，但未選擇完整日期時段`);
+                        }
+                    } else if (e.target.classList.contains('seat-button') && e.target.disabled) {
+                        console.log(`點擊了已預約座位 ${e.target.textContent.trim()}`);
+                    } else {
+                        console.log('點擊地圖空白區域 - X:', e.offsetX, 'Y:', e.offsetY);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
