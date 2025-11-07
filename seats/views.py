@@ -1,26 +1,24 @@
 # SeatBooking/seats/views.py
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.urls import reverse
 from django.utils import timezone
-from datetime import date, timedelta, datetime # datetime 也可能從 timezone 導入
+from datetime import date, timedelta, datetime 
 from django.core.mail import send_mail
-from .models import Seat, Reservation, Report # 確保 Report 模型已導入
-from .forms import ReportForm # 確保 ReportForm 已導入
+from .models import Seat, Reservation, Report 
+from .forms import ReportForm 
 
-# --- Django Settings 檢查 (通常在 settings.py) ---
-from django.conf import settings # 導入 settings 以便檢查 USE_TZ
+from django.conf import settings #
 
-# --- 核心視圖函數 ---
+
 
 @login_required
 def welcome(request): # 即時座位圖 / 預約系統主頁
     now = timezone.now()
 
     overlapping_reservations = Reservation.objects.filter(
-        status='reserved', # 假設 'reserved' 代表有效的、正在進行的預約
+        status='reserved', # 'reserved'正在進行的預約
         start_time__lte=now,
         end_time__gte=now
     ).select_related('seat')
@@ -31,7 +29,7 @@ def welcome(request): # 即時座位圖 / 預約系統主頁
     context = {
         'seats': seats,
         'reserved_seat_ids': reserved_seat_ids,
-        'now': timezone.localtime(now), # 顯示時轉為本地時間
+        'now': timezone.localtime(now), # 本地時間
         'page_title': '即時座位圖'
     }
     return render(request, 'seats/welcome.html', context)
@@ -216,7 +214,7 @@ def make_reservation(request): # 處理預約請求
     return redirect(reverse('seats:res_time'))
 
 
-# --- 「個人預約紀錄」視圖 ---
+# 個人預約紀錄
 @login_required
 def records(request):
     user = request.user
@@ -234,7 +232,7 @@ def records(request):
     return render(request, 'seats/records.html', context)
 
 
-# --- 「取消預約」函數 (通過 ID) ---
+# 取消預約
 @login_required
 def cancel_reservation_by_id(request, reservation_id):
     redirect_url = reverse('seats:records')
@@ -260,53 +258,6 @@ def cancel_reservation_by_id(request, reservation_id):
     return redirect(redirect_url)
 
 
-# --- 「檢舉」相關視圖 ---
-@login_required
-def reminds(request):
-    if request.method == 'POST':
-        form = ReportForm(request.POST)
-        if form.is_valid():
-            report = form.save(commit=False)
-            report.reporter = request.user
-            report.save()
-
-            # ✅ 發送提醒郵件
-            if report.reported_user and report.reported_user.email:
-                subject = "您在 K 書中心被提醒"
-                message = (
-                    f"您好，\n\n"
-                    f"您在 {report.reported_date} {report.reported_time} 被其他使用者提醒。\n"
-                    f"座位編號：{report.seat.name if report.seat else '未指定'}\n"
-                    f"提醒原因：{report.reason}\n\n"
-                    f"如有疑問，請洽管理員。"
-                )
-                send_mail(
-                    subject,
-                    message,
-                    settings.DEFAULT_FROM_EMAIL,
-                    [report.reported_user.email],
-                    fail_silently=True,  # 不會因為寄信失敗中斷流程
-                )
-
-            messages.success(request, "您的檢舉已成功提交，感謝您的回饋！")
-            return redirect(reverse('seats:reminds'))
-        else:
-            messages.error(request, "提交失敗，請檢查表單內容。")
-    else:
-        form = ReportForm(initial={'reported_date': date.today()})
-
-    seats = Seat.objects.all()
-    date_options = [(date.today() + timedelta(days=i)).isoformat() for i in range(7)]
-    time_slots = [f'{h:02}:00' for h in range(8, 24)]
-
-    context = {
-        'form': form,
-        'seats': seats,
-        'date_options': date_options,
-        'time_slots': time_slots,
-        'page_title': '提交檢舉/提醒'
-    }
-    return render(request, 'seats/reminds.html', context)
 
 # --- (可選) 提交針對特定預約的檢舉 (如果 urls.py 中有 'submit_report' 指向這裡) ---
 @login_required
@@ -364,21 +315,16 @@ def submit_report(request, reservation_id):
         'reservation_to_report': reservation_to_report,
         'page_title': f'檢舉預約 (座位 {reservation_to_report.seat.name})'
     }
-    return render(request, 'seats/submit_report_form.html', context) # 你需要創建這個模板
+    return render(request, 'seats/submit_report_form.html', context) 
 
 
-# --- (可選) 你之前在 urls.py 中有一個 cancel_from_form 指向 original_cancel_reservation ---
-# 如果你不再需要它，可以刪除這個函數和對應的 URL。
-# 為了完整性，我保留它，但你需要確認它的用途。
+
 @login_required
 def original_cancel_reservation(request):
-    # ... (你之前提供的 original_cancel_reservation 邏輯) ...
-    # 確保它也做了正確的時區處理 (timezone.make_aware)
-    # 並考慮是否真的還需要這個函數
     if request.method == 'POST':
-        # ...
-        messages.info(request, "原始取消表單功能正在處理...") # 示例訊息
-        return redirect(reverse('seats:res_time')) # 示例跳轉
+
+        messages.info(request, "原始取消表單功能正在處理...") # 訊息
+        return redirect(reverse('seats:res_time')) # 跳轉
     return redirect(reverse('seats:res_time'))
 
 
@@ -487,9 +433,9 @@ from .models import Seat, Reservation, Report # 確保 Report, Reservation 模�
 from .forms import ReportForm # 確保 ReportForm 已導入
 from django.db.models import Q # 用於複雜查詢
 
-# ... (其他視圖函數，保持不變) ...
 
-# --- 「檢舉」相關視圖 ---
+
+# 檢舉
 @login_required
 def reminds(request):
     seats = Seat.objects.all()
