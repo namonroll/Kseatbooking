@@ -3,8 +3,8 @@ from django.contrib.auth.models import User
 from datetime import datetime
 
 class Seat(models.Model):
-    name = models.CharField(max_length=20, unique=True)  # 座位編號（例如 A1, B2）
-    x = models.IntegerField(default=0)  # 選擇性：如果要在座位圖定位
+    name = models.CharField(max_length=20, unique=True)  # 座位編號
+    x = models.IntegerField(default=0)  # 選座位定位
     y = models.IntegerField(default=0)
 
     def __str__(self):
@@ -31,7 +31,7 @@ class Reservation(models.Model):
 
 from django.db import models
 from django.contrib.auth.models import User
-from datetime import datetime # 雖然這裡導入了，但通常用 django.utils.timezone
+from datetime import datetime 
 
 class Seat(models.Model):
     name = models.CharField(max_length=20, unique=True, verbose_name="座位編號")
@@ -70,11 +70,9 @@ class Report(models.Model):
     seat = models.ForeignKey(Seat, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="被檢舉座位")
     reporter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reports_made', verbose_name="檢舉人")
     
-    # 🌟 關鍵修改：讓 reported_user 可以自動從 reservation 帶入，或者手動指定
     reported_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reports_against', verbose_name="被檢舉人")
     
-    # 🌟 建議新增：關聯到特定的預約 (如果有被檢舉的預約)
-    # 這使得檢舉的目標更明確，也方便後續查找預約者
+
     reported_reservation = models.ForeignKey(
         'Reservation', 
         on_delete=models.SET_NULL, 
