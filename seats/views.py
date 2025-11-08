@@ -473,9 +473,6 @@ def reminds(request):
                 }
                 return render(request, 'seats/reminds.html', context)
 
-            # 🌟 核心邏輯：根據座位和時間查詢預約
-            # 查找在檢舉時間點正在該座位上預約的使用者
-            # 考慮該預約在事件時間點是有效的 (start_time <= event_datetime < end_time)
             target_reservation = Reservation.objects.filter(
                 seat=reported_seat,
                 start_time__lte=event_datetime,
@@ -488,14 +485,14 @@ def reminds(request):
                 report.reported_reservation = target_reservation # 關聯到被檢舉的預約
                 messages.info(request, f"系統已自動識別被檢舉者為 {target_reservation.user.username}。")
             else:
-                # 如果沒有找到對應的預約，可以選擇不設定 reported_user，或者給予提示
+                # 如果沒有找到對應的預約
                 report.reported_user = None # 如果沒有找到，設為 None
                 report.reported_reservation = None # 如果沒有找到，設為 None
                 messages.warning(request, "未找到在該座位和時間點的有效預約，無法自動識別被檢舉者。")
 
             report.save() # 儲存 report 物件
 
-            # ✅ 發送提醒郵件
+            # 發送提醒郵件
             # 現在檢查 report.reported_user 是否存在 (因為可能沒找到對應預約)
             if report.reported_user and report.reported_user.email:
                 subject = "您在 K 書中心被提醒"
